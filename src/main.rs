@@ -6,29 +6,43 @@ use x11rb::errors::{ReplyError, ReplyOrIdError};
 use x11rb::protocol::xproto::*;
 use x11rb::protocol::ErrorKind;
 
+#[derive(Debug)]
 struct WinState {
-    id: u32,
-    x: u32,
-    y: u32,
-    width: u32,
-    height: u32,
+    id: Window,
+    x: i16,
+    y: i16,
+    width: u16,
+    height: u16,
 }
 
-struct WMState<C: Connection> {
-    connection: C,
+impl WinState {
+    fn new(win: Window, geom: &GetGeometryReply) -> Self {
+        Self {
+            id: win,
+            x: geom.x,
+            y: geom.y,
+            width: geom.width,
+            height: geom.height,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct WMState<'a, C: Connection> {
+    conn: &'a C,
     screen_num: usize,
-    focus_hist: Vec<WinState>,
+    windows: Vec<WinState>,
 }
 
-impl<C> WMState<C>
+impl<'a, C> WMState<'a, C>
 where
     C: Connection,
 {
-    fn new(conn: C, screen_num: usize) -> Self {
+    fn new(conn: &'a C, screen_num: usize) -> Self {
         Self {
-            connection: conn,
+            conn,
             screen_num,
-            focus_hist: vec![],
+            windows: vec![],
         }
     }
 }
@@ -58,5 +72,5 @@ fn main() {
     };
 
     // We are the window manager!
-    let wm_state = WMState::new(conn, screen_num);
+    let mut wm_state = WMState::new(&conn, screen_num);
 }
