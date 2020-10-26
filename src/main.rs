@@ -1,6 +1,5 @@
 use std::process::exit;
 
-use x11rb;
 use x11rb::connection::Connection;
 use x11rb::errors::{ReplyError, ReplyOrIdError};
 use x11rb::protocol::xproto::*;
@@ -45,6 +44,43 @@ where
             windows: vec![],
         }
     }
+
+    /// Scan for pre-existing windows and manage them
+    fn scan_windows(&mut self) -> Result<(), ReplyOrIdError> {
+        let screen = &self.conn.setup().roots[self.screen_num];
+        let tree = self.conn.query_tree(screen.root)?.reply()?;
+
+        // Bunch request the attributes of each window
+        let mut cookies = Vec::with_capacity(tree.children.len());
+        for win in tree.children {
+            let attr = self.conn.get_window_attributes(win)?;
+            cookies.push((win, attr));
+        }
+
+        // Get the replies and manage the windows
+        for (win, attr) in cookies {
+            let attr = attr.reply();
+            if attr.is_err() {
+                // Just skip this window
+                continue;
+            }
+            let attr = attr.unwrap();
+            if !attr.override_redirect && attr.map_state != MapState::Unmapped {
+                self.manage_window(win)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn manage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
+        let geom = &self.conn.get_geometry(window)?.reply()?;
+
+        self.conn.map_window(window)?;
+        self.windows.push(WinState::new(window, &geom));
+
+        Ok(())
+    }
 }
 
 fn try_become_wm<C: Connection>(conn: &C, screen: &Screen) -> Result<(), ReplyError> {
@@ -73,4 +109,5 @@ fn main() {
 
     // We are the window manager!
     let mut wm_state = WMState::new(&conn, screen_num);
+    wm_state.scan_windows().unwrap();
 }
