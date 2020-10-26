@@ -3,7 +3,7 @@ use std::process::exit;
 use x11rb::connection::Connection;
 use x11rb::errors::{ReplyError, ReplyOrIdError};
 use x11rb::protocol::xproto::*;
-use x11rb::protocol::ErrorKind;
+use x11rb::protocol::{ErrorKind, Event};
 
 const BORDER_WIDTH: u32 = 4;
 const BORDER_COLOR: u32 = 0b11111111_00000000_00000000_11111111; // ARGB format
@@ -93,6 +93,15 @@ where
 
         Ok(())
     }
+
+    fn handle_event(&mut self, event: Event) -> Result<(), ReplyOrIdError> {
+        match event {
+            Event::MapRequest(event) => self.manage_window(event.window)?,
+            _ => {}
+        }
+
+        Ok(())
+    }
 }
 
 fn try_become_wm<C: Connection>(conn: &C, screen: &Screen) -> Result<(), ReplyError> {
@@ -122,4 +131,13 @@ fn main() {
     // We are the window manager!
     let mut wm_state = WMState::new(&conn, screen_num);
     wm_state.scan_windows().unwrap();
+
+    // Main loop
+    loop {
+        wm_state.conn.flush().unwrap();
+
+        while let Some(event) = wm_state.conn.poll_for_event().unwrap() {
+            wm_state.handle_event(event).unwrap();
+        }
+    }
 }
