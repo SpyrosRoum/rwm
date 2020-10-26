@@ -5,6 +5,9 @@ use x11rb::errors::{ReplyError, ReplyOrIdError};
 use x11rb::protocol::xproto::*;
 use x11rb::protocol::ErrorKind;
 
+const BORDER_WIDTH: u32 = 4;
+const BORDER_COLOR: u32 = 0b11111111_00000000_00000000_11111111; // ARGB format
+
 #[derive(Debug)]
 struct WinState {
     id: Window,
@@ -74,9 +77,18 @@ where
     }
 
     fn manage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
-        let geom = &self.conn.get_geometry(window)?.reply()?;
+        // Add a border
+        let config = ConfigureWindowAux::default().border_width(BORDER_WIDTH);
+        self.conn.configure_window(window, &config)?;
 
+        // Give color to the border
+        let attrs = ChangeWindowAttributesAux::default().border_pixel(BORDER_COLOR);
+        self.conn.change_window_attributes(window, &attrs)?;
+
+        // Show the window
         self.conn.map_window(window)?;
+
+        let geom = self.conn.get_geometry(window)?.reply()?;
         self.windows.push(WinState::new(window, &geom));
 
         Ok(())
