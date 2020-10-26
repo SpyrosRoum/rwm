@@ -7,10 +7,10 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         let bytes: [u8; 4] = [
-            255u8.to_be_bytes()[0], // Alpha
-            0u8.to_be_bytes()[0],   // Red
-            0u8.to_be_bytes()[0],   // Green
-            255u8.to_be_bytes()[0], // Blue
+            255u8, // Alpha
+            0u8,   // Red
+            0u8,   // Green
+            255u8, // Blue
         ];
 
         let blue = u32::from_be_bytes(bytes);
