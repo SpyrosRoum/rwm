@@ -144,6 +144,10 @@ where
     }
 
     fn handle_button_press(&mut self, event: ButtonPressEvent) -> Result<(), ReplyOrIdError> {
+        self.conn.configure_window(
+            event.event,
+            &ConfigureWindowAux::new().stack_mode(StackMode::Above),
+        )?;
         // Left mouse click
         if event.detail != 1 {
             return Ok(());
