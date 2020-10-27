@@ -12,8 +12,9 @@ use config::Config;
 use states::WMState;
 
 fn try_become_wm<C: Connection>(conn: &C, screen: &Screen) -> Result<(), ReplyError> {
-    let change = ChangeWindowAttributesAux::default()
-        .event_mask(EventMask::SubstructureRedirect | EventMask::StructureNotify);
+    let change = ChangeWindowAttributesAux::default().event_mask(
+        EventMask::SubstructureRedirect | EventMask::SubstructureNotify | EventMask::ButtonPress,
+    );
 
     conn.change_window_attributes(screen.root, &change)?.check()
 }
