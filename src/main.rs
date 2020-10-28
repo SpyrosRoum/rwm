@@ -7,6 +7,7 @@ use x11rb::connection::Connection;
 use x11rb::errors::ReplyError;
 use x11rb::protocol::xproto::*;
 use x11rb::protocol::ErrorKind;
+use x11rb::protocol::Event;
 
 use config::Config;
 use states::WMState;
@@ -40,11 +41,22 @@ fn main() {
     let mut wm_state = WMState::new(&conn, screen_num, Config::default());
     wm_state.scan_windows().unwrap();
 
+    let mut last_motion = 0;
     // Main loop
     loop {
         wm_state.conn.flush().unwrap();
 
         while let Some(event) = wm_state.conn.poll_for_event().unwrap() {
+            match &event {
+                Event::MotionNotify(ev) => {
+                    // This is done so we don't update the window for every pixel we move/resize it
+                    if ev.time - last_motion < 1000 / 144 {
+                        continue;
+                    }
+                    last_motion = ev.time;
+                }
+                _ => {}
+            }
             wm_state.handle_event(event).unwrap();
         }
     }
