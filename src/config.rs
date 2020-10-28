@@ -1,7 +1,10 @@
+use x11rb::protocol::xproto::ModMask;
+
 #[derive(Debug)]
 pub struct Config {
     pub(crate) border_width: u32,
     pub(crate) border_color: u32, // ARGB format
+    pub(crate) mod_key: ModMask,
 }
 
 impl Default for Config {
@@ -15,8 +18,9 @@ impl Default for Config {
 
         let blue = u32::from_be_bytes(bytes);
         Self {
-            border_width: 4,
+            border_width: 4, // pixels
             border_color: blue,
+            mod_key: ModMask::M1, // left alt
         }
     }
 }
