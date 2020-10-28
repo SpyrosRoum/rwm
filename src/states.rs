@@ -156,7 +156,7 @@ where
 
         // We only care if mod key is being pressed as well
         if clean_mask(event.state) != self.config.mod_key.into() {
-            return Ok(())
+            return Ok(());
         }
 
         if let Some(window) = self.find_window_by_id(event.event) {
