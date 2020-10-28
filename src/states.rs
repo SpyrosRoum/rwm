@@ -4,6 +4,7 @@ use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;
 
 use crate::config::Config;
+use crate::utils::clean_mask;
 
 #[derive(Debug)]
 pub struct WinState {
@@ -151,6 +152,11 @@ where
         // Left mouse click
         if event.detail != 1 {
             return Ok(());
+        }
+
+        // We only care if mod key is being pressed as well
+        if clean_mask(event.state) != self.config.mod_key.into() {
+            return Ok(())
         }
 
         if let Some(window) = self.find_window_by_id(event.event) {

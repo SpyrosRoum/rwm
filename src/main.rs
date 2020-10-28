@@ -1,5 +1,6 @@
 mod config;
 mod states;
+mod utils;
 
 use std::process::exit;
 
