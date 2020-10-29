@@ -48,7 +48,7 @@ fn main() {
     loop {
         wm_state.conn.flush().unwrap();
 
-        while let Some(event) = wm_state.conn.poll_for_event().unwrap() {
+        if let Ok(event) = wm_state.conn.wait_for_event() {
             if let Event::MotionNotify(ev) = &event {
                 // This is done so we don't update the window for every pixel we move/resize it
                 if ev.time - last_motion < 1000 / 144 {
