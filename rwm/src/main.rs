@@ -1,4 +1,5 @@
 mod config;
+mod event_handlers;
 mod states;
 mod utils;
 

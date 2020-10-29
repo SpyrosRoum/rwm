@@ -4,7 +4,6 @@ use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;
 
 use crate::config::Config;
-use crate::utils::clean_mask;
 
 #[derive(Debug)]
 pub struct WinState {
@@ -52,7 +51,7 @@ where
         }
     }
 
-    fn find_window_by_id(&self, id: Window) -> Option<&WinState> {
+    pub(crate) fn find_window_by_id(&self, id: Window) -> Option<&WinState> {
         self.windows.iter().find(|win| win.id == id)
     }
 
@@ -84,7 +83,7 @@ where
         Ok(())
     }
 
-    pub fn manage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
+    fn manage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
         // Add a border
         let config = ConfigureWindowAux::default().border_width(self.config.border_width);
         self.conn.configure_window(window, &config)?;
@@ -141,56 +140,6 @@ where
             _ => {}
         }
 
-        Ok(())
-    }
-
-    fn handle_button_press(&mut self, event: ButtonPressEvent) -> Result<(), ReplyOrIdError> {
-        self.conn.configure_window(
-            event.event,
-            &ConfigureWindowAux::new().stack_mode(StackMode::Above),
-        )?;
-        // Left mouse click
-        if event.detail != 1 {
-            return Ok(());
-        }
-
-        // We only care if mod key is being pressed as well
-        if clean_mask(event.state) != self.config.mod_key.into() {
-            return Ok(());
-        }
-
-        if let Some(window) = self.find_window_by_id(event.event) {
-            let (x, y) = (-event.event_x, -event.event_y);
-            self.selected_window = Some((window.id, (x, y)));
-        }
-        Ok(())
-    }
-
-    fn handle_motion_notify(&mut self, event: MotionNotifyEvent) -> Result<(), ReplyOrIdError> {
-        if let Some((window, (x, y))) = self.selected_window {
-            if event.event != window {
-                return Ok(());
-            } else {
-                let (x, y) = (x + event.root_x, y + event.root_y);
-                let (x, y) = (x as i32, y as i32);
-                self.conn
-                    .configure_window(window, &ConfigureWindowAux::new().x(x).y(y))?;
-            }
-        }
-        Ok(())
-    }
-
-    fn handle_button_release(&mut self, event: ButtonPressEvent) -> Result<(), ReplyOrIdError> {
-        // Left mouse click
-        if event.detail != 1 {
-            return Ok(());
-        }
-
-        if let Some((window, _)) = self.selected_window {
-            if window == event.event {
-                self.selected_window = None;
-            }
-        }
         Ok(())
     }
 }
