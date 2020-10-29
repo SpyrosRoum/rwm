@@ -186,7 +186,7 @@ where
             return Ok(());
         }
 
-        if let Some((window, (x, y))) = self.selected_window {
+        if let Some((window, _)) = self.selected_window {
             if window == event.event {
                 self.selected_window = None;
             }

@@ -48,15 +48,12 @@ fn main() {
         wm_state.conn.flush().unwrap();
 
         while let Some(event) = wm_state.conn.poll_for_event().unwrap() {
-            match &event {
-                Event::MotionNotify(ev) => {
-                    // This is done so we don't update the window for every pixel we move/resize it
-                    if ev.time - last_motion < 1000 / 144 {
-                        continue;
-                    }
-                    last_motion = ev.time;
+            if let Event::MotionNotify(ev) = &event {
+                // This is done so we don't update the window for every pixel we move/resize it
+                if ev.time - last_motion < 1000 / 144 {
+                    continue;
                 }
-                _ => {}
+                last_motion = ev.time;
             }
             wm_state.handle_event(event).unwrap();
         }
