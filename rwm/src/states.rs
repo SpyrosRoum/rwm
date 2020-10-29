@@ -108,8 +108,7 @@ where
         // This ugly line is needed because grab_button expects something that implements Into<u16>
         // but EventMask is u32
         let event_mask =
-            u32::from(EventMask::ButtonPress | EventMask::ButtonRelease | EventMask::PointerMotion)
-                as u16;
+            (EventMask::ButtonPress | EventMask::ButtonRelease | EventMask::PointerMotion) as u16;
         self.conn.grab_button(
             false,
             window,
