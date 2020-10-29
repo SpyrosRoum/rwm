@@ -1,0 +1,10 @@
+[package]
+name = "rwm"
+version = "0.1.0"
+authors = ["Spyros Roum <spyrosr1@gmail.com>"]
+description = "The Rusty Window Manager"
+edition = "2018"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+x11rb = "0.7"
