@@ -1,6 +1,8 @@
 use std::collections::HashSet;
+use std::error::Error;
 use std::io::Read;
 use std::os::unix::net::UnixStream;
+use std::str::FromStr;
 
 use x11rb::connection::Connection;
 use x11rb::errors::ReplyOrIdError;
@@ -8,8 +10,8 @@ use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;
 use x11rb::rust_connection::RustConnection;
 
+use crate::command::Command;
 use crate::config::Config;
-use std::error::Error;
 
 #[derive(Debug)]
 pub struct WinState {
@@ -170,7 +172,17 @@ impl<'a> WMState<'a> {
         let mut cmd = String::with_capacity(cmd_len);
         handle.read_to_string(&mut cmd)?;
 
-        // TODO parse and handle the command
+        let cmd = Command::from_str(&cmd)?;
+        self.handle_command(cmd)?;
+
+        Ok(())
+    }
+
+    /// Handle the command from a client
+    fn handle_command(&mut self, cmd: Command) -> Result<(), Box<dyn Error>> {
+        match cmd {
+            Command::Quit => self.running = false,
+        };
 
         Ok(())
     }

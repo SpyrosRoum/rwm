@@ -1,4 +1,6 @@
+mod command;
 mod config;
+mod errors;
 mod event_handlers;
 mod states;
 mod utils;
