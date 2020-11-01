@@ -3,10 +3,11 @@ mod event_handlers;
 mod states;
 mod utils;
 
+use std::io::Write;
+use std::net::Shutdown;
+use std::os::unix::net::UnixListener;
 use std::process::exit;
-use std::os::unix::{io::AsRawFd, net::UnixListener};
 
-use polling;
 use x11rb::connection::Connection;
 use x11rb::errors::ReplyError;
 use x11rb::protocol::xproto::*;
@@ -52,32 +53,31 @@ fn main() {
     listener.set_nonblocking(true).unwrap();
 
     let poller = polling::Poller::new().unwrap();
-    poller.add(conn.stream(), polling::Event::readable(1));
-    poller.add(&listener, polling::Event::readable(2));
+    poller
+        .add(conn.stream(), polling::Event::readable(1))
+        .unwrap();
+    poller.add(&listener, polling::Event::readable(2)).unwrap();
     // events from poller go here
     let mut events = Vec::new();
 
     let mut last_motion = 0;
     // Main loop
-    loop {
+    while wm_state.running {
         wm_state.conn.flush().unwrap();
-        poller.wait(&mut events, None);
+        poller.wait(&mut events, None).unwrap();
         // We just want to iterate and modify them so we wait for the next event as well
         // By default once it gets the first event from a source it doesn't wait for another one again..
-        events
-            .iter()
-            .map(|ev| {
-                if ev.key == 1 {
-                    poller
-                        .modify(conn.stream(), polling::Event::readable(1))
-                        .unwrap();
-                } else if ev.key == 2 {
-                    poller
-                        .modify(&listener, polling::Event::readable(2))
-                        .unwrap();
-                }
-            })
-            .collect::<Vec<_>>(); // We need to collect it because iterators are lazy and do nothing if not used
+        events.iter().for_each(|ev| {
+            if ev.key == 1 {
+                poller
+                    .modify(conn.stream(), polling::Event::readable(1))
+                    .unwrap();
+            } else if ev.key == 2 {
+                poller
+                    .modify(&listener, polling::Event::readable(2))
+                    .unwrap();
+            }
+        });
 
         while let Some(event) = wm_state.conn.poll_for_event().unwrap() {
             if let Event::MotionNotify(ev) = &event {
@@ -90,10 +90,15 @@ fn main() {
             wm_state.handle_event(event).unwrap();
         }
 
-        if let Ok(stream) = listener.accept() {
-            // TODO handle the stream
-            dbg!(&stream);
+        if let Ok((mut stream, _adr)) = listener.accept() {
+            match wm_state.handle_client(&mut stream) {
+                Ok(_) => stream.write(b"0"),
+                Err(_) => stream.write(b"1"),
+            }
+            .ok(); // .ok() is used to basically just ignore the result
+            stream.shutdown(Shutdown::Both).ok();
         };
+
         // Clean the poller events so new can go in
         events.clear();
     }

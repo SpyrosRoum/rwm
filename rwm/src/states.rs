@@ -1,10 +1,15 @@
-use x11rb::rust_connection::RustConnection;
+use std::collections::HashSet;
+use std::io::Read;
+use std::os::unix::net::UnixStream;
+
 use x11rb::connection::Connection;
 use x11rb::errors::ReplyOrIdError;
 use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;
+use x11rb::rust_connection::RustConnection;
 
 use crate::config::Config;
+use std::error::Error;
 
 #[derive(Debug)]
 pub struct WinState {
@@ -20,7 +25,7 @@ pub struct WMState<'a> {
     pub(crate) conn: &'a RustConnection,
     pub(crate) config: Config,
     pub(crate) screen_num: usize,
-    pub(crate) windows: Vec<WinState>,
+    pub(crate) running: bool,
     // If this is Some, we are currently dragging the given window with the given offset relative
     // to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
@@ -38,13 +43,13 @@ impl WinState {
     }
 }
 
-impl<'a> WMState<'a>
-{
+impl<'a> WMState<'a> {
     pub fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
         Self {
             conn,
             config,
             screen_num,
+            running: true,
             windows: vec![],
             selected_window: None,
         }
@@ -129,6 +134,7 @@ impl<'a> WMState<'a>
         Ok(())
     }
 
+    /// Handle events from the X server
     pub fn handle_event(&mut self, event: Event) -> Result<(), ReplyOrIdError> {
         match event {
             Event::MapRequest(event) => self.manage_window(event.window)?,
@@ -137,6 +143,23 @@ impl<'a> WMState<'a>
             Event::MotionNotify(event) => self.handle_motion_notify(event)?,
             _ => {}
         }
+
+        Ok(())
+    }
+
+    /// Handle a client from the socket
+    pub fn handle_client(&mut self, stream: &mut UnixStream) -> Result<(), Box<dyn Error>> {
+        // First for bytes we read should be the length of the command that follows
+        let mut cmd_len = [0; 4];
+        stream.read_exact(&mut cmd_len)?;
+        // If it can't be parsed to a number we simply don't care about it
+        let cmd_len = String::from_utf8(cmd_len.to_vec())?.parse::<usize>()?;
+
+        let mut handle = stream.take(cmd_len as u64);
+        let mut cmd = String::with_capacity(cmd_len);
+        handle.read_to_string(&mut cmd)?;
+
+        // TODO parse and handle the command
 
         Ok(())
     }
