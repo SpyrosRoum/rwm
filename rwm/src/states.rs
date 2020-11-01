@@ -14,18 +14,19 @@ use std::error::Error;
 #[derive(Debug)]
 pub struct WinState {
     pub(crate) id: Window,
-    pub(crate) x: i16,
-    pub(crate) y: i16,
-    pub(crate) width: u16,
-    pub(crate) height: u16,
+    x: i16,
+    y: i16,
+    width: u16,
+    height: u16,
 }
 
 #[derive(Debug)]
 pub struct WMState<'a> {
     pub(crate) conn: &'a RustConnection,
     pub(crate) config: Config,
-    pub(crate) screen_num: usize,
+    screen_num: usize,
     pub(crate) running: bool,
+    windows: Vec<WinState>,
     // If this is Some, we are currently dragging the given window with the given offset relative
     // to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,

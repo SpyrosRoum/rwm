@@ -5,8 +5,7 @@ use x11rb::protocol::xproto::*;
 use crate::utils::clean_mask;
 use crate::WMState;
 
-impl<'a> WMState<'a>
-{
+impl<'a> WMState<'a> {
     pub(crate) fn handle_button_press(
         &mut self,
         event: ButtonPressEvent,
