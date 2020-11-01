@@ -1,3 +1,4 @@
+use x11rb::rust_connection::RustConnection;
 use x11rb::connection::Connection;
 use x11rb::errors::ReplyOrIdError;
 use x11rb::protocol::xproto::*;
@@ -15,8 +16,8 @@ pub struct WinState {
 }
 
 #[derive(Debug)]
-pub struct WMState<'a, C: Connection> {
-    pub(crate) conn: &'a C,
+pub struct WMState<'a> {
+    pub(crate) conn: &'a RustConnection,
     pub(crate) config: Config,
     pub(crate) screen_num: usize,
     pub(crate) windows: Vec<WinState>,
@@ -37,11 +38,9 @@ impl WinState {
     }
 }
 
-impl<'a, C> WMState<'a, C>
-where
-    C: Connection,
+impl<'a> WMState<'a>
 {
-    pub fn new(conn: &'a C, screen_num: usize, config: Config) -> Self {
+    pub fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
         Self {
             conn,
             config,

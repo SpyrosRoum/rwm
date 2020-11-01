@@ -5,6 +5,7 @@ mod utils;
 
 use std::process::exit;
 
+use x11rb::rust_connection::RustConnection;
 use x11rb::connection::Connection;
 use x11rb::errors::ReplyError;
 use x11rb::protocol::xproto::*;
@@ -14,16 +15,16 @@ use x11rb::protocol::Event;
 use config::Config;
 use states::WMState;
 
-fn try_become_wm<C: Connection>(conn: &C, screen: &Screen) -> Result<(), ReplyError> {
+fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyError> {
     let change = ChangeWindowAttributesAux::default().event_mask(
-        EventMask::SubstructureRedirect | EventMask::SubstructureNotify | EventMask::ButtonPress,
+        EventMask::SubstructureRedirect | EventMask::SubstructureNotify | EventMask::ButtonPress | EventMask::StructureNotify,
     );
 
     conn.change_window_attributes(screen.root, &change)?.check()
 }
 
 fn main() {
-    let (conn, screen_num) = x11rb::connect(None).unwrap();
+    let (conn, screen_num) = RustConnection::connect(None).unwrap();
 
     let screen = &conn.setup().roots[screen_num];
 
