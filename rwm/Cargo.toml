@@ -8,3 +8,4 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 x11rb = "0.7"
+polling = "2.0"
