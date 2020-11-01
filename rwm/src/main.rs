@@ -104,4 +104,6 @@ fn main() {
         // Clean the poller events so new can go in
         events.clear();
     }
+
+    utils::clean_up().expect("Failed to clean up.");
 }
