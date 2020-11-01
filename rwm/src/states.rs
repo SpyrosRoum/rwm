@@ -18,6 +18,8 @@ pub struct WinState {
     y: i16,
     width: u16,
     height: u16,
+    // The tags that this window is on
+    tags: HashSet<u8>,
 }
 
 #[derive(Debug)]
@@ -30,22 +32,29 @@ pub struct WMState<'a> {
     // If this is Some, we are currently dragging the given window with the given offset relative
     // to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
+    // The tags that are currently visible
+    tags: HashSet<u8>,
 }
 
 impl WinState {
     pub fn new(win: Window, geom: &GetGeometryReply) -> Self {
+        let mut tags = HashSet::with_capacity(9);
+        tags.insert(1);
         Self {
             id: win,
             x: geom.x,
             y: geom.y,
             width: geom.width,
             height: geom.height,
+            tags,
         }
     }
 }
 
 impl<'a> WMState<'a> {
     pub fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
+        let mut tags = HashSet::with_capacity(9);
+        tags.insert(1);
         Self {
             conn,
             config,
@@ -53,6 +62,7 @@ impl<'a> WMState<'a> {
             running: true,
             windows: vec![],
             selected_window: None,
+            tags,
         }
     }
 
