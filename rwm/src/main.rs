@@ -4,6 +4,7 @@ mod errors;
 mod event_handlers;
 mod states;
 mod utils;
+mod newtypes;
 
 use std::io::Write;
 use std::net::Shutdown;

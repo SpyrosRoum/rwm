@@ -12,6 +12,7 @@ use x11rb::rust_connection::RustConnection;
 
 use crate::command::Command;
 use crate::config::Config;
+use crate::newtypes::Tag;
 
 #[derive(Debug)]
 pub struct WinState {
@@ -21,7 +22,7 @@ pub struct WinState {
     width: u16,
     height: u16,
     // The tags that this window is on
-    tags: HashSet<u8>,
+    tags: HashSet<Tag>,
 }
 
 #[derive(Debug)]
@@ -35,13 +36,11 @@ pub struct WMState<'a> {
     // to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
     // The tags that are currently visible
-    tags: HashSet<u8>,
+    tags: HashSet<Tag>,
 }
 
 impl WinState {
-    pub fn new(win: Window, geom: &GetGeometryReply) -> Self {
-        let mut tags = HashSet::with_capacity(9);
-        tags.insert(1);
+    pub(crate) fn new(win: Window, geom: &GetGeometryReply, tags: HashSet<Tag>) -> Self {
         Self {
             id: win,
             x: geom.x,
@@ -55,8 +54,9 @@ impl WinState {
 
 impl<'a> WMState<'a> {
     pub fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
+        // tags are 1-9 and the default is 1
         let mut tags = HashSet::with_capacity(9);
-        tags.insert(1);
+        tags.insert(Tag::new(1).unwrap());
         Self {
             conn,
             config,
@@ -142,8 +142,8 @@ impl<'a> WMState<'a> {
         self.conn.map_window(window)?;
 
         let geom = self.conn.get_geometry(window)?.reply()?;
-        self.windows.push(WinState::new(window, &geom));
-
+        // self.tags.clone() because the new window will be in the currently viewable tags
+        self.windows.push(WinState::new(window, &geom, self.tags.clone()));
         Ok(())
     }
 
