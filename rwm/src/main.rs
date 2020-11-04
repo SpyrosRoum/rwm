@@ -1,10 +1,11 @@
 mod command;
+mod command_handlers;
 mod config;
 mod errors;
 mod event_handlers;
+mod newtypes;
 mod states;
 mod utils;
-mod newtypes;
 
 use std::io::Write;
 use std::net::Shutdown;

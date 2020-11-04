@@ -36,7 +36,7 @@ pub struct WMState<'a> {
     // to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
     // The tags that are currently visible
-    tags: HashSet<Tag>,
+    pub(crate) tags: HashSet<Tag>,
 }
 
 impl WinState {
@@ -143,7 +143,8 @@ impl<'a> WMState<'a> {
 
         let geom = self.conn.get_geometry(window)?.reply()?;
         // self.tags.clone() because the new window will be in the currently viewable tags
-        self.windows.push(WinState::new(window, &geom, self.tags.clone()));
+        self.windows
+            .push(WinState::new(window, &geom, self.tags.clone()));
         Ok(())
     }
 
@@ -171,7 +172,7 @@ impl<'a> WMState<'a> {
         let mut handle = stream.take(cmd_len as u64);
         let mut cmd = String::with_capacity(cmd_len);
         handle.read_to_string(&mut cmd)?;
-
+        dbg!(&cmd);
         let cmd = Command::from_str(&cmd)?;
         self.handle_command(cmd)?;
 
@@ -181,9 +182,28 @@ impl<'a> WMState<'a> {
     /// Handle the command from a client
     fn handle_command(&mut self, cmd: Command) -> Result<(), Box<dyn Error>> {
         match cmd {
-            Command::Quit => self.running = false,
-        };
+            Command::Quit => {
+                self.running = false;
+            }
+            Command::Tag(sub) => self.handle_tag_cmd(sub)?,
+        }
 
+        Ok(())
+    }
+
+    /// Called when there is a change like a tag introduced
+    pub(crate) fn update_windows(&mut self) -> Result<(), Box<dyn Error>> {
+        for win in self.windows.iter() {
+            for tag in self.tags.iter() {
+                if win.tags.contains(tag) {
+                    self.conn.map_window(win.id)?;
+                    break;
+                } else {
+                    self.conn.unmap_window(win.id)?;
+                }
+            }
+        }
+        dbg!(&self.tags);
         Ok(())
     }
 }

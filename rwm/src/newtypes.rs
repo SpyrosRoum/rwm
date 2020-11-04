@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use std::num::ParseIntError;
 
 use crate::errors::TagValueError;
 
@@ -10,7 +9,7 @@ impl Tag {
     pub(crate) fn new(tag: u8) -> Result<Self, TagValueError> {
         // Tags can only be from 1 to 9
         if tag < 1 || tag > 9 {
-            Err(TagValueError{tag_num: tag})
+            Err(TagValueError { tag_num: tag })
         } else {
             Ok(Tag(tag))
         }
