@@ -36,7 +36,7 @@ impl<'a> WMState<'a> {
         let focused_window = focused_window.unwrap();
 
         match sub {
-            WindowSubcommand::Destroy => self.conn.destroy_window(focused_window.id),
+            WindowSubcommand::Destroy => self.conn.destroy_window(focused_window.id)?,
         };
 
         self.update_windows()?;
