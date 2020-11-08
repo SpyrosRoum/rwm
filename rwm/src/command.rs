@@ -1,3 +1,9 @@
+// Available commands right now are:
+// quit/exit
+// tag switch {tag number}
+// tag toggle {tag number}
+// window destroy/kill
+
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -36,7 +42,7 @@ impl FromStr for Command {
 
         let command = App::new("Command")
             .setting(AppSettings::NoBinaryName)
-            .subcommand(SubCommand::with_name("quit"))
+            .subcommand(SubCommand::with_name("quit").alias("exit"))
             .subcommand(
                 SubCommand::with_name("tag")
                     .subcommand(SubCommand::with_name("switch").arg(Arg::with_name("tag").index(1)))
