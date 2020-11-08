@@ -16,7 +16,7 @@ impl fmt::Display for ToCommandError {
 impl std::convert::From<TagValueError> for ToCommandError {
     fn from(e: TagValueError) -> Self {
         Self {
-            text: format!("Invalid tag number: {}", e.tag_num).to_string(),
+            text: format!("Invalid tag number: {}", e.tag_num),
         }
     }
 }
