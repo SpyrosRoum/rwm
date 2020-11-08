@@ -7,17 +7,14 @@ mod newtypes;
 mod states;
 mod utils;
 
-use std::io::Write;
-use std::net::Shutdown;
-use std::os::unix::net::UnixListener;
-use std::process::exit;
+use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, process::exit};
 
-use x11rb::connection::Connection;
-use x11rb::errors::ReplyError;
-use x11rb::protocol::xproto::*;
-use x11rb::protocol::ErrorKind;
-use x11rb::protocol::Event;
-use x11rb::rust_connection::RustConnection;
+use x11rb::{
+    connection::Connection,
+    errors::ReplyError,
+    protocol::{xproto::*, ErrorKind, Event},
+    rust_connection::RustConnection,
+};
 
 use config::Config;
 use states::WMState;

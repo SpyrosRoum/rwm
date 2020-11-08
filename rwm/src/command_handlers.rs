@@ -1,8 +1,9 @@
 use std::error::Error;
 
+use x11rb::protocol::xproto::ConnectionExt;
+
 use crate::command::{TagSubCommand, WindowSubcommand};
 use crate::WMState;
-use x11rb::protocol::xproto::ConnectionExt;
 
 impl<'a> WMState<'a> {
     pub(crate) fn on_tag_cmd(&mut self, sub: TagSubCommand) -> Result<(), Box<dyn Error>> {
