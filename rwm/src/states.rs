@@ -72,6 +72,12 @@ impl<'a> WMState<'a> {
         self.windows.iter().find(|win| win.id == id)
     }
 
+    pub(crate) fn get_focused_window(&self) -> Option<&WinState> {
+        // For now I will just return the top of self.windows but **this is wrong**
+        // TODO implement an actual focus history per tag (and in the current tags)
+        self.windows.iter().last()
+    }
+
     /// Scan for pre-existing windows and manage them
     pub fn scan_windows(&mut self) -> Result<(), ReplyOrIdError> {
         let screen = &self.conn.setup().roots[self.screen_num];
@@ -148,6 +154,15 @@ impl<'a> WMState<'a> {
         Ok(())
     }
 
+    /// Called when a window gets destroyed (DestroyNotify)
+    fn unmanage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
+        self.conn.unmap_window(window)?;
+        self.conn
+            .ungrab_button(ButtonIndex::Any, window, ModMask::Any)?;
+        self.windows.retain(|win_state| win_state.id != window);
+        Ok(())
+    }
+
     /// Handle events from the X server
     pub fn handle_event(&mut self, event: Event) -> Result<(), ReplyOrIdError> {
         match event {
@@ -155,6 +170,7 @@ impl<'a> WMState<'a> {
             Event::ButtonPress(event) => self.on_button_press(event)?,
             Event::ButtonRelease(event) => self.on_button_release(event)?,
             Event::MotionNotify(event) => self.on_motion_notify(event)?,
+            Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
             _ => {}
         }
 
@@ -185,6 +201,7 @@ impl<'a> WMState<'a> {
                 self.running = false;
             }
             Command::Tag(sub) => self.on_tag_cmd(sub)?,
+            Command::Window(sub) => self.on_window_cmd(sub)?,
         }
 
         Ok(())

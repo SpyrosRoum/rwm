@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use crate::command::TagSubCommand;
+use crate::command::{TagSubCommand, WindowSubcommand};
 use crate::WMState;
+use x11rb::protocol::xproto::ConnectionExt;
 
 impl<'a> WMState<'a> {
     pub(crate) fn on_tag_cmd(&mut self, sub: TagSubCommand) -> Result<(), Box<dyn Error>> {
@@ -19,6 +20,23 @@ impl<'a> WMState<'a> {
                 self.tags.clear();
                 self.tags.insert(tag);
             }
+        };
+
+        self.update_windows()?;
+        Ok(())
+    }
+
+    pub(crate) fn on_window_cmd(&mut self, sub: WindowSubcommand) -> Result<(), Box<dyn Error>> {
+        let focused_window = self.get_focused_window();
+        if focused_window.is_none() {
+            // there are no windows so just do nothing
+            return Ok(());
+        }
+
+        let focused_window = focused_window.unwrap();
+
+        match sub {
+            WindowSubcommand::Destroy => self.conn.destroy_window(focused_window.id),
         };
 
         self.update_windows()?;
