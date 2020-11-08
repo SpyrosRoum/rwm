@@ -4,7 +4,7 @@ use crate::command::TagSubCommand;
 use crate::WMState;
 
 impl<'a> WMState<'a> {
-    pub(crate) fn handle_tag_cmd(&mut self, sub: TagSubCommand) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn on_tag_cmd(&mut self, sub: TagSubCommand) -> Result<(), Box<dyn Error>> {
         match sub {
             TagSubCommand::Toggle(tag) => {
                 // I know that it's possible to insert a tag that is already in, but we don't care

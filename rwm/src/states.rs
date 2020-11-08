@@ -152,9 +152,9 @@ impl<'a> WMState<'a> {
     pub fn handle_event(&mut self, event: Event) -> Result<(), ReplyOrIdError> {
         match event {
             Event::MapRequest(event) => self.manage_window(event.window)?,
-            Event::ButtonPress(event) => self.handle_button_press(event)?,
-            Event::ButtonRelease(event) => self.handle_button_release(event)?,
-            Event::MotionNotify(event) => self.handle_motion_notify(event)?,
+            Event::ButtonPress(event) => self.on_button_press(event)?,
+            Event::ButtonRelease(event) => self.on_button_release(event)?,
+            Event::MotionNotify(event) => self.on_motion_notify(event)?,
             _ => {}
         }
 
@@ -184,7 +184,7 @@ impl<'a> WMState<'a> {
             Command::Quit => {
                 self.running = false;
             }
-            Command::Tag(sub) => self.handle_tag_cmd(sub)?,
+            Command::Tag(sub) => self.on_tag_cmd(sub)?,
         }
 
         Ok(())

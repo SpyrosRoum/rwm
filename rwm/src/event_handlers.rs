@@ -6,7 +6,7 @@ use crate::utils::clean_mask;
 use crate::WMState;
 
 impl<'a> WMState<'a> {
-    pub(crate) fn handle_button_press(
+    pub(crate) fn on_button_press(
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
@@ -31,7 +31,7 @@ impl<'a> WMState<'a> {
         Ok(())
     }
 
-    pub(crate) fn handle_motion_notify(
+    pub(crate) fn on_motion_notify(
         &mut self,
         event: MotionNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
@@ -48,7 +48,7 @@ impl<'a> WMState<'a> {
         Ok(())
     }
 
-    pub(crate) fn handle_button_release(
+    pub(crate) fn on_button_release(
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
