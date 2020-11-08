@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+
 use crate::errors::ToCommandError;
 use crate::newtypes::Tag;
 
@@ -26,22 +28,43 @@ impl FromStr for Command {
             return Err(ToCommandError { text: cmd_str });
         }
 
-        if cmd_parts[0] == "quit" {
-            return Ok(Self::Quit);
-        } else if cmd_parts[0] == "tag" {
-            if let Some(sub_command) = cmd_parts.get(1) {
-                if sub_command == &"toggle" || sub_command == &"switch" {
-                    if let Some(tag) = cmd_parts.get(2) {
-                        let tag = Tag::from_str(tag)?;
-                        return if sub_command == &"toggle" {
-                            Ok(Self::Tag(TagSubCommand::Toggle(tag)))
-                        } else {
-                            Ok(Self::Tag(TagSubCommand::Switch(tag)))
-                        };
-                    }
-                }
-            }
+        let command = App::new("Command")
+            .setting(AppSettings::NoBinaryName)
+            .subcommand(SubCommand::with_name("quit"))
+            .subcommand(
+                SubCommand::with_name("tag")
+                    .subcommand(SubCommand::with_name("switch").arg(Arg::with_name("tag").index(1)))
+                    .subcommand(
+                        SubCommand::with_name("toggle").arg(Arg::with_name("tag").index(1)),
+                    ),
+            )
+            .get_matches_from_safe(&cmd_parts);
+
+        if command.is_err() {
+            return Err(ToCommandError { text: cmd_str });
         }
-        Err(ToCommandError { text: cmd_str })
+        let command = command.unwrap();
+
+        match command.subcommand() {
+            ("quit", _) => Ok(Self::Quit),
+            ("tag", Some(subcommands)) => match subcommands.subcommand() {
+                ("toggle", Some(args)) => {
+                    if args.value_of("tag").is_none() {
+                        return Err(ToCommandError { text: cmd_str });
+                    }
+                    let tag = Tag::from_str(args.value_of("tag").unwrap())?;
+                    Ok(Self::Tag(TagSubCommand::Toggle(tag)))
+                }
+                ("switch", Some(args)) => {
+                    if args.value_of("tag").is_none() {
+                        return Err(ToCommandError { text: cmd_str });
+                    }
+                    let tag = Tag::from_str(args.value_of("tag").unwrap())?;
+                    Ok(Self::Tag(TagSubCommand::Switch(tag)))
+                }
+                _ => Err(ToCommandError { text: cmd_str }),
+            },
+            _ => Err(ToCommandError { text: cmd_str }),
+        }
     }
 }

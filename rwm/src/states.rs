@@ -172,7 +172,6 @@ impl<'a> WMState<'a> {
         let mut handle = stream.take(cmd_len as u64);
         let mut cmd = String::with_capacity(cmd_len);
         handle.read_to_string(&mut cmd)?;
-        dbg!(&cmd);
         let cmd = Command::from_str(&cmd)?;
         self.handle_command(cmd)?;
 
