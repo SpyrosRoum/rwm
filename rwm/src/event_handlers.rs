@@ -1,8 +1,6 @@
-use x11rb::errors::ReplyOrIdError;
-use x11rb::protocol::xproto::*;
+use x11rb::{errors::ReplyOrIdError, protocol::xproto::*};
 
-use crate::utils::clean_mask;
-use crate::WMState;
+use crate::{utils::clean_mask, WMState};
 
 impl<'a> WMState<'a> {
     pub(crate) fn on_button_press(

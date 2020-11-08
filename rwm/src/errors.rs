@@ -1,6 +1,4 @@
-use std::error::Error;
-use std::fmt;
-use std::num::ParseIntError;
+use std::{error::Error, fmt, num::ParseIntError};
 
 #[derive(Debug)]
 pub(crate) struct ToCommandError {

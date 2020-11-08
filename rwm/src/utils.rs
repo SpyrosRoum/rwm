@@ -1,6 +1,5 @@
-use std::fs;
+use std::{error::Error, fs};
 
-use std::error::Error;
 use x11rb::protocol::xproto::KeyButMask;
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {

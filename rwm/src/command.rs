@@ -8,8 +8,7 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 
-use crate::errors::ToCommandError;
-use crate::newtypes::Tag;
+use crate::{errors::ToCommandError, newtypes::Tag};
 
 #[derive(Debug)]
 pub(crate) enum TagSubCommand {

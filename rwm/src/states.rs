@@ -1,18 +1,13 @@
-use std::collections::HashSet;
-use std::error::Error;
-use std::io::Read;
-use std::os::unix::net::UnixStream;
-use std::str::FromStr;
+use std::{collections::HashSet, error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
 
-use x11rb::connection::Connection;
-use x11rb::errors::ReplyOrIdError;
-use x11rb::protocol::xproto::*;
-use x11rb::protocol::Event;
-use x11rb::rust_connection::RustConnection;
+use x11rb::{
+    connection::Connection,
+    errors::ReplyOrIdError,
+    protocol::{xproto::*, Event},
+    rust_connection::RustConnection,
+};
 
-use crate::command::Command;
-use crate::config::Config;
-use crate::newtypes::Tag;
+use crate::{command::Command, config::Config, newtypes::Tag};
 
 #[derive(Debug)]
 pub struct WinState {
