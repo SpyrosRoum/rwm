@@ -19,6 +19,7 @@ pub(crate) enum TagSubCommand {
 #[derive(Debug)]
 pub(crate) enum WindowSubcommand {
     Destroy,
+    Send(Tag),
 }
 
 #[derive(Debug)]
@@ -51,7 +52,8 @@ impl FromStr for Command {
             )
             .subcommand(
                 SubCommand::with_name("window")
-                    .subcommand(SubCommand::with_name("destroy").alias("kill")),
+                    .subcommand(SubCommand::with_name("destroy").alias("kill"))
+                    .subcommand(SubCommand::with_name("send").arg(Arg::with_name("tag").index(1))),
             )
             .get_matches_from_safe(&cmd_parts);
 
@@ -75,6 +77,10 @@ impl FromStr for Command {
             },
             ("window", Some(subcommands)) => match subcommands.subcommand() {
                 ("destroy", _) => Ok(Self::Window(WindowSubcommand::Destroy)),
+                ("send", Some(args)) => {
+                    let tag = utils::get_tag(args)?;
+                    Ok(Self::Window(WindowSubcommand::Send(tag)))
+                }
                 _ => Err(ToCommandError { text: cmd_str }),
             },
             _ => Err(ToCommandError { text: cmd_str }),

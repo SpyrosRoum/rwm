@@ -17,7 +17,7 @@ pub struct WinState {
     width: u16,
     height: u16,
     // The tags that this window is on
-    tags: HashSet<Tag>,
+    pub(crate) tags: HashSet<Tag>,
 }
 
 #[derive(Debug)]
@@ -71,6 +71,12 @@ impl<'a> WMState<'a> {
         // For now I will just return the top of self.windows but **this is wrong**
         // TODO implement an actual focus history per tag (and in the current tags)
         self.windows.iter().last()
+    }
+
+    pub(crate) fn get_focused_window_mut(&mut self) -> Option<&mut WinState> {
+        // For now I will just return the top of self.windows but **this is wrong**
+        // TODO implement an actual focus history per tag (and in the current tags)
+        self.windows.iter_mut().last()
     }
 
     /// Scan for pre-existing windows and manage them

@@ -35,11 +35,18 @@ impl<'a> WMState<'a> {
             // there are no windows so just do nothing
             return Ok(());
         }
-
         let focused_window = focused_window.unwrap();
-
         match sub {
-            WindowSubcommand::Destroy => self.conn.destroy_window(focused_window.id)?,
+            WindowSubcommand::Destroy => {
+                self.conn.destroy_window(focused_window.id)?;
+            }
+            WindowSubcommand::Send(tag) => {
+                // We want a mutable window state so we get it again as mut
+                if let Some(focused_window) = self.get_focused_window_mut() {
+                    focused_window.tags.clear();
+                    focused_window.tags.insert(tag);
+                }
+            }
         };
 
         self.update_windows()?;
