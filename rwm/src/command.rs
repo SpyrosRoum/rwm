@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 
-use crate::{errors::ToCommandError, newtypes::Tag};
+use crate::{errors::ToCommandError, newtypes::Tag, utils};
 
 #[derive(Debug)]
 pub(crate) enum TagSubCommand {
@@ -64,17 +64,11 @@ impl FromStr for Command {
             ("quit", _) => Ok(Self::Quit),
             ("tag", Some(subcommands)) => match subcommands.subcommand() {
                 ("toggle", Some(args)) => {
-                    if args.value_of("tag").is_none() {
-                        return Err(ToCommandError { text: cmd_str });
-                    }
-                    let tag = Tag::from_str(args.value_of("tag").unwrap())?;
+                    let tag = utils::get_tag(args)?;
                     Ok(Self::Tag(TagSubCommand::Toggle(tag)))
                 }
                 ("switch", Some(args)) => {
-                    if args.value_of("tag").is_none() {
-                        return Err(ToCommandError { text: cmd_str });
-                    }
-                    let tag = Tag::from_str(args.value_of("tag").unwrap())?;
+                    let tag = utils::get_tag(args)?;
                     Ok(Self::Tag(TagSubCommand::Switch(tag)))
                 }
                 _ => Err(ToCommandError { text: cmd_str }),
