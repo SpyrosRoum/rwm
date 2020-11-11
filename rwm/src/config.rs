@@ -3,23 +3,34 @@ use x11rb::protocol::xproto::ModMask;
 #[derive(Debug)]
 pub struct Config {
     pub(crate) border_width: u32,
-    pub(crate) border_color: u32, // ARGB format
+    /// ARGB format
+    pub(crate) focused_border_color: u32,
+    pub(crate) normal_border_color: u32,
     pub(crate) mod_key: ModMask,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let bytes: [u8; 4] = [
+        let blue_bytes: [u8; 4] = [
             255u8, // Alpha
             0u8,   // Red
             0u8,   // Green
             255u8, // Blue
         ];
+        let blue = u32::from_be_bytes(blue_bytes);
 
-        let blue = u32::from_be_bytes(bytes);
+        let gray_bytes: [u8; 4] = [
+            255u8, // Alpha
+            211u8, // Red
+            211u8, // Green
+            211u8, // Blue
+        ];
+        let gray = u32::from_be_bytes(gray_bytes);
+
         Self {
             border_width: 4, // pixels
-            border_color: blue,
+            focused_border_color: blue,
+            normal_border_color: gray,
             mod_key: ModMask::M1, // left alt
         }
     }

@@ -1,4 +1,10 @@
-use std::{collections::HashSet, error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
+use std::{
+    collections::{HashSet, VecDeque},
+    error::Error,
+    io::Read,
+    os::unix::net::UnixStream,
+    str::FromStr,
+};
 
 use x11rb::{
     connection::Connection,
@@ -16,7 +22,7 @@ pub struct WinState {
     y: i16,
     width: u16,
     height: u16,
-    // The tags that this window is on
+    /// The tags that this window is on
     pub(crate) tags: HashSet<Tag>,
 }
 
@@ -26,11 +32,12 @@ pub struct WMState<'a> {
     pub(crate) config: Config,
     screen_num: usize,
     pub(crate) running: bool,
-    windows: Vec<WinState>,
-    // If this is Some, we are currently dragging the given window with the given offset relative
-    // to the mouse.
+    /// A vecDequeue with all windows that acts as a focus history as well
+    pub(crate) windows: VecDeque<WinState>,
+    /// If this is Some, we are currently dragging the given window with the given offset relative
+    /// to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
-    // The tags that are currently visible
+    /// The tags that are currently visible
     pub(crate) tags: HashSet<Tag>,
 }
 
@@ -57,26 +64,40 @@ impl<'a> WMState<'a> {
             config,
             screen_num,
             running: true,
-            windows: vec![],
+            windows: VecDeque::new(),
             selected_window: None,
             tags,
         }
     }
 
-    pub(crate) fn find_window_by_id(&self, id: Window) -> Option<&WinState> {
-        self.windows.iter().find(|win| win.id == id)
+    /// Get the Window State and the index of it in the vec
+    pub(crate) fn find_window_by_id(&self, id: Window) -> Option<(usize, &WinState)> {
+        self.windows
+            .iter()
+            .enumerate()
+            .find(|(_i, win)| win.id == id)
     }
 
     pub(crate) fn get_focused_window(&self) -> Option<&WinState> {
-        // For now I will just return the top of self.windows but **this is wrong**
-        // TODO implement an actual focus history per tag (and in the current tags)
-        self.windows.iter().last()
+        self.windows.iter().find(|win_state| {
+            for tag in self.tags.iter() {
+                return win_state.tags.contains(tag);
+            }
+            // There is always at least one tag
+            unreachable!();
+        })
     }
 
     pub(crate) fn get_focused_window_mut(&mut self) -> Option<&mut WinState> {
-        // For now I will just return the top of self.windows but **this is wrong**
-        // TODO implement an actual focus history per tag (and in the current tags)
-        self.windows.iter_mut().last()
+        // This can probably be done better without cloning
+        let tags = self.tags.clone();
+        self.windows.iter_mut().find(|win_state| {
+            for tag in tags.iter() {
+                return win_state.tags.contains(tag);
+            }
+            // There is always at least one tag
+            unreachable!();
+        })
     }
 
     /// Scan for pre-existing windows and manage them
@@ -112,16 +133,14 @@ impl<'a> WMState<'a> {
         let config = ConfigureWindowAux::default().border_width(self.config.border_width);
         self.conn.configure_window(window, &config)?;
 
-        // Give color to the border
-        let attrs = ChangeWindowAttributesAux::default().border_pixel(self.config.border_color);
-        self.conn.change_window_attributes(window, &attrs)?;
-
         // Register the proper events with the window
         let events = ChangeWindowAttributesAux::default().event_mask(
             EventMask::KeyPress
                 | EventMask::KeyRelease
                 | EventMask::ButtonRelease
                 | EventMask::PointerMotion
+                | EventMask::EnterWindow
+                | EventMask::FocusChange
                 | EventMask::EnterWindow,
         );
         self.conn
@@ -151,7 +170,9 @@ impl<'a> WMState<'a> {
         let geom = self.conn.get_geometry(window)?.reply()?;
         // self.tags.clone() because the new window will be in the currently viewable tags
         self.windows
-            .push(WinState::new(window, &geom, self.tags.clone()));
+            .push_back(WinState::new(window, &geom, self.tags.clone()));
+
+        self.update_windows()?;
         Ok(())
     }
 
@@ -172,6 +193,8 @@ impl<'a> WMState<'a> {
             Event::ButtonRelease(event) => self.on_button_release(event)?,
             Event::MotionNotify(event) => self.on_motion_notify(event)?,
             Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
+            Event::FocusIn(event) => self.on_focus_in(event)?,
+            Event::EnterNotify(event) => self.on_enter_notify(event)?,
             _ => {}
         }
 
@@ -209,10 +232,21 @@ impl<'a> WMState<'a> {
     }
 
     /// Called when there is a change like a tag introduced
-    pub(crate) fn update_windows(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn update_windows(&mut self) -> Result<(), ReplyOrIdError> {
+        let mut found_first = false;
+
         for win in self.windows.iter() {
             for tag in self.tags.iter() {
                 if win.tags.contains(tag) {
+                    let border_color = if !found_first {
+                        found_first = true;
+                        self.config.focused_border_color
+                    } else {
+                        self.config.normal_border_color
+                    };
+                    let attrs = ChangeWindowAttributesAux::default().border_pixel(border_color);
+                    self.conn.change_window_attributes(win.id, &attrs)?;
+
                     self.conn.map_window(win.id)?;
                     break;
                 } else {
@@ -220,7 +254,7 @@ impl<'a> WMState<'a> {
                 }
             }
         }
-        dbg!(&self.tags);
+
         Ok(())
     }
 }
