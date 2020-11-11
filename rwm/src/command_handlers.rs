@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use x11rb::protocol::xproto::ConnectionExt;
+use x11rb::{protocol::xproto::ConnectionExt, errors::ReplyOrIdError};
 
 use crate::{
     command::{TagSubCommand, WindowSubcommand},
@@ -39,6 +39,7 @@ impl<'a> WMState<'a> {
         match sub {
             WindowSubcommand::Destroy => {
                 self.conn.destroy_window(focused_window.id)?;
+                self.update_windows()?;
             }
             WindowSubcommand::Send(tag) => {
                 // We want a mutable window state so we get it again as mut
@@ -46,6 +47,7 @@ impl<'a> WMState<'a> {
                     focused_window.tags.clear();
                     focused_window.tags.insert(tag);
                 }
+                self.update_windows()?;
             }
         };
 
