@@ -81,10 +81,11 @@ impl<'a> WMState<'a> {
     pub(crate) fn get_focused_window(&self) -> Option<&WinState> {
         self.windows.iter().find(|win_state| {
             for tag in self.tags.iter() {
-                return win_state.tags.contains(tag);
+                if win_state.tags.contains(tag) {
+                    return true
+                };
             }
-            // There is always at least one tag
-            unreachable!();
+            false
         })
     }
 
@@ -93,10 +94,11 @@ impl<'a> WMState<'a> {
         let tags = self.tags.clone();
         self.windows.iter_mut().find(|win_state| {
             for tag in tags.iter() {
-                return win_state.tags.contains(tag);
+                if win_state.tags.contains(tag) {
+                    return true
+                };
             }
-            // There is always at least one tag
-            unreachable!();
+            false
         })
     }
 
