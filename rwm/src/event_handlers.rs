@@ -71,7 +71,10 @@ impl<'a> WMState<'a> {
         Ok(())
     }
 
-    pub(crate) fn on_enter_notify(&mut self, event: EnterNotifyEvent) -> Result<(), ReplyOrIdError> {
+    pub(crate) fn on_enter_notify(
+        &mut self,
+        event: EnterNotifyEvent,
+    ) -> Result<(), ReplyOrIdError> {
         let (i, _) = self.find_window_by_id(event.event).unwrap();
         let win_state = self.windows.remove(i).unwrap();
         self.windows.push_front(win_state);

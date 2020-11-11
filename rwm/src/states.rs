@@ -79,27 +79,17 @@ impl<'a> WMState<'a> {
     }
 
     pub(crate) fn get_focused_window(&self) -> Option<&WinState> {
-        self.windows.iter().find(|win_state| {
-            for tag in self.tags.iter() {
-                if win_state.tags.contains(tag) {
-                    return true
-                };
-            }
-            false
-        })
+        self.windows
+            .iter()
+            .find(|win_state| self.tags.iter().any(|tag| win_state.tags.contains(tag)))
     }
 
     pub(crate) fn get_focused_window_mut(&mut self) -> Option<&mut WinState> {
         // This can probably be done better without cloning
         let tags = self.tags.clone();
-        self.windows.iter_mut().find(|win_state| {
-            for tag in tags.iter() {
-                if win_state.tags.contains(tag) {
-                    return true
-                };
-            }
-            false
-        })
+        self.windows
+            .iter_mut()
+            .find(|win_state| tags.iter().any(|tag| win_state.tags.contains(tag)))
     }
 
     /// Scan for pre-existing windows and manage them
