@@ -1,10 +1,4 @@
-use std::{
-    collections::{HashSet, VecDeque},
-    error::Error,
-    io::Read,
-    os::unix::net::UnixStream,
-    str::FromStr,
-};
+use std::{collections::HashSet, error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
 
 use x11rb::{
     connection::Connection,
@@ -13,9 +7,9 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use crate::{command::Command, config::Config, newtypes::Tag};
+use crate::{command::Command, config::Config, focus_history::FocusHist, newtypes::Tag};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct WinState {
     pub(crate) id: Window,
     x: i16,
@@ -33,7 +27,7 @@ pub struct WMState<'a> {
     screen_num: usize,
     pub(crate) running: bool,
     /// A vecDequeue with all windows that acts as a focus history as well
-    pub(crate) windows: VecDeque<WinState>,
+    pub(crate) windows: FocusHist,
     /// If this is Some, we are currently dragging the given window with the given offset relative
     /// to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
@@ -64,32 +58,10 @@ impl<'a> WMState<'a> {
             config,
             screen_num,
             running: true,
-            windows: VecDeque::new(),
+            windows: FocusHist::new(),
             selected_window: None,
             tags,
         }
-    }
-
-    /// Get the Window State and the index of it in the vec
-    pub(crate) fn find_window_by_id(&self, id: Window) -> Option<(usize, &WinState)> {
-        self.windows
-            .iter()
-            .enumerate()
-            .find(|(_i, win)| win.id == id)
-    }
-
-    pub(crate) fn get_focused_window(&self) -> Option<&WinState> {
-        self.windows
-            .iter()
-            .find(|win_state| self.tags.iter().any(|tag| win_state.tags.contains(tag)))
-    }
-
-    pub(crate) fn get_focused_window_mut(&mut self) -> Option<&mut WinState> {
-        // This can probably be done better without cloning
-        let tags = self.tags.clone();
-        self.windows
-            .iter_mut()
-            .find(|win_state| tags.iter().any(|tag| win_state.tags.contains(tag)))
     }
 
     /// Scan for pre-existing windows and manage them
@@ -161,8 +133,9 @@ impl<'a> WMState<'a> {
 
         let geom = self.conn.get_geometry(window)?.reply()?;
         // self.tags.clone() because the new window will be in the currently viewable tags
+        // We also push at the front of the focus history because the window now has focus
         self.windows
-            .push_back(WinState::new(window, &geom, self.tags.clone()));
+            .push_front(WinState::new(window, &geom, self.tags.clone()));
 
         self.update_windows()?;
         Ok(())
@@ -173,6 +146,13 @@ impl<'a> WMState<'a> {
         self.conn.unmap_window(window)?;
         self.conn
             .ungrab_button(ButtonIndex::Any, window, ModMask::Any)?;
+
+        if let Some(focused) = self.windows.get_focused() {
+            if focused.id == window {
+                self.windows.focus_next(&self.tags);
+            }
+        }
+
         self.windows.retain(|win_state| win_state.id != window);
         Ok(())
     }
@@ -225,26 +205,23 @@ impl<'a> WMState<'a> {
 
     /// Called when there is a change like a tag introduced
     pub(crate) fn update_windows(&mut self) -> Result<(), ReplyOrIdError> {
-        let mut found_first = false;
-
+        // Map the proper windows and unmap the rest
         for win in self.windows.iter() {
-            for tag in self.tags.iter() {
-                if win.tags.contains(tag) {
-                    let border_color = if !found_first {
-                        found_first = true;
-                        self.config.focused_border_color
-                    } else {
-                        self.config.normal_border_color
-                    };
-                    let attrs = ChangeWindowAttributesAux::default().border_pixel(border_color);
-                    self.conn.change_window_attributes(win.id, &attrs)?;
-
-                    self.conn.map_window(win.id)?;
-                    break;
-                } else {
-                    self.conn.unmap_window(win.id)?;
-                }
+            if self.tags.iter().any(|tag| win.tags.contains(tag)) {
+                dbg!(&win.id);
+                let attrs = ChangeWindowAttributesAux::default()
+                    .border_pixel(self.config.normal_border_color);
+                self.conn.change_window_attributes(win.id, &attrs)?;
+                self.conn.map_window(win.id)?;
+            } else {
+                self.conn.unmap_window(win.id)?;
             }
+        }
+
+        if let Some(focused) = self.windows.get_focused() {
+            let attrs =
+                ChangeWindowAttributesAux::default().border_pixel(self.config.focused_border_color);
+            self.conn.change_window_attributes(focused.id, &attrs)?;
         }
 
         Ok(())

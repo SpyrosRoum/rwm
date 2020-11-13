@@ -18,10 +18,14 @@ impl<'a> WMState<'a> {
                 } else {
                     self.tags.insert(tag);
                 }
+
+                self.windows.find_focus(&self.tags);
             }
             TagSubCommand::Switch(tag) => {
                 self.tags.clear();
                 self.tags.insert(tag);
+
+                self.windows.find_focus(&self.tags);
             }
         };
 
@@ -30,7 +34,7 @@ impl<'a> WMState<'a> {
     }
 
     pub(crate) fn on_window_cmd(&mut self, sub: WindowSubcommand) -> Result<(), Box<dyn Error>> {
-        let focused_window = self.get_focused_window();
+        let focused_window = self.windows.get_focused();
         if focused_window.is_none() {
             // there are no windows so just do nothing
             return Ok(());
@@ -39,14 +43,16 @@ impl<'a> WMState<'a> {
         match sub {
             WindowSubcommand::Destroy => {
                 self.conn.destroy_window(focused_window.id)?;
+                self.windows.focus_next(&self.tags);
                 self.update_windows()?;
             }
             WindowSubcommand::Send(tag) => {
                 // We want a mutable window state so we get it again as mut
-                if let Some(focused_window) = self.get_focused_window_mut() {
+                if let Some(focused_window) = self.windows.get_focused_mut() {
                     focused_window.tags.clear();
                     focused_window.tags.insert(tag);
                 }
+                self.windows.focus_next(&self.tags);
                 self.update_windows()?;
             }
         };

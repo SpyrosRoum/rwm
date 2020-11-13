@@ -21,7 +21,7 @@ impl<'a> WMState<'a> {
             return Ok(());
         }
 
-        if let Some((_, window)) = self.find_window_by_id(event.event) {
+        if let Some((_, window)) = self.windows.find_by_id(event.event) {
             let (x, y) = (-event.event_x, -event.event_y);
             self.selected_window = Some((window.id, (x, y)));
         }
@@ -63,10 +63,7 @@ impl<'a> WMState<'a> {
     }
 
     pub(crate) fn on_focus_in(&mut self, event: FocusInEvent) -> Result<(), ReplyOrIdError> {
-        let (i, _) = self.find_window_by_id(event.event).unwrap();
-        let win_state = self.windows.remove(i).unwrap();
-        self.windows.push_front(win_state);
-
+        self.windows.set_focused(event.event);
         self.update_windows()?;
         Ok(())
     }
@@ -75,10 +72,7 @@ impl<'a> WMState<'a> {
         &mut self,
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
-        let (i, _) = self.find_window_by_id(event.event).unwrap();
-        let win_state = self.windows.remove(i).unwrap();
-        self.windows.push_front(win_state);
-
+        self.windows.set_focused(event.event);
         self.update_windows()?;
         Ok(())
     }

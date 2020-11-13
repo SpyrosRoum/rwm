@@ -3,6 +3,7 @@ mod command_handlers;
 mod config;
 mod errors;
 mod event_handlers;
+mod focus_history;
 mod newtypes;
 mod states;
 mod utils;
