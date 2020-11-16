@@ -1,9 +1,10 @@
 use std::error::Error;
 
-use x11rb::{protocol::xproto::ConnectionExt, errors::ReplyOrIdError};
+use x11rb::protocol::xproto::{ConfigureWindowAux, ConnectionExt, StackMode};
 
 use crate::{
     command::{TagSubCommand, WindowSubcommand},
+    enums::Direction,
     WMState,
 };
 
@@ -55,9 +56,26 @@ impl<'a> WMState<'a> {
                 self.windows.focus_next(&self.tags);
                 self.update_windows()?;
             }
+            WindowSubcommand::Focus(dir) => {
+                self.on_window_focus(dir)?;
+            }
         };
 
         self.update_windows()?;
+        Ok(())
+    }
+
+    fn on_window_focus(&mut self, direction: Direction) -> Result<(), Box<dyn Error>> {
+        match direction {
+            Direction::Up => self.windows.focus_prev(&self.tags),
+            Direction::Down => self.windows.focus_next(&self.tags),
+        }
+        if let Some(win) = self.windows.get_focused() {
+            self.conn.configure_window(
+                win.id,
+                &ConfigureWindowAux::new().stack_mode(StackMode::Above),
+            )?;
+        }
         Ok(())
     }
 }

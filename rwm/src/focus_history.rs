@@ -85,27 +85,52 @@ impl FocusHist {
                 .skip(index + 1)
                 .position(|win| tags.iter().any(|tag| win.tags.contains(tag)));
 
-            let next = if let Some(next) = next {
-                next + index + 1
-            } else {
-                // Look from the beginning
-                let next = self
+            self.cur = match next {
+                Some(v) => Some(v + index + 1),
+                None => self
                     .windows
                     .iter()
-                    .position(|win| tags.iter().any(|tag| win.tags.contains(tag)));
-                if next.is_none() {
-                    self.cur = None;
-                }
-                next.unwrap()
+                    .position(|win| tags.iter().any(|tag| win.tags.contains(tag))),
             };
-
-            self.cur = Some(next);
         } else {
-            let next = self
+            self.cur = self
                 .windows
                 .iter()
                 .position(|win| tags.iter().any(|tag| win.tags.contains(tag)));
-            self.cur = next;
+        }
+    }
+
+    /// Give focus to the previous window with the correct tags
+    pub(crate) fn focus_prev(&mut self, tags: &HashSet<Tag>) {
+        if let Some(index) = self.cur {
+            let prev = self
+                .windows
+                .iter()
+                .enumerate()
+                .take(index)
+                .rev()
+                .find(|(_, win)| tags.iter().any(|tag| win.tags.contains(tag)))
+                .map(|(i, _)| i);
+
+            self.cur = match prev {
+                Some(v) => Some(v),
+                None => self
+                    .windows
+                    .iter()
+                    .enumerate()
+                    .rev()
+                    .find(|(_, win)| tags.iter().any(|tag| win.tags.contains(tag)))
+                    .map(|(i, _)| i),
+            };
+        } else {
+            // If there is nothing focused just focus the last one
+            self.cur = self
+                .windows
+                .iter()
+                .enumerate()
+                .rev()
+                .find(|(_, win)| tags.iter().any(|tag| win.tags.contains(tag)))
+                .map(|(i, _)| i);
         }
     }
 

@@ -3,12 +3,13 @@
 // tag switch {tag number}
 // tag toggle {tag number}
 // window destroy/kill
+// window focus {direction}
 
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 
-use crate::{errors::ToCommandError, newtypes::Tag, utils};
+use crate::{enums::Direction, errors::ToCommandError, newtypes::Tag, utils};
 
 #[derive(Debug)]
 pub(crate) enum TagSubCommand {
@@ -20,6 +21,7 @@ pub(crate) enum TagSubCommand {
 pub(crate) enum WindowSubcommand {
     Destroy,
     Send(Tag),
+    Focus(Direction),
 }
 
 #[derive(Debug)]
@@ -53,7 +55,10 @@ impl FromStr for Command {
             .subcommand(
                 SubCommand::with_name("window")
                     .subcommand(SubCommand::with_name("destroy").alias("kill"))
-                    .subcommand(SubCommand::with_name("send").arg(Arg::with_name("tag").index(1))),
+                    .subcommand(SubCommand::with_name("send").arg(Arg::with_name("tag").index(1)))
+                    .subcommand(
+                        SubCommand::with_name("focus").arg(Arg::with_name("direction").index(1)),
+                    ),
             )
             .get_matches_from_safe(&cmd_parts);
 
@@ -80,6 +85,10 @@ impl FromStr for Command {
                 ("send", Some(args)) => {
                     let tag = utils::get_tag(args)?;
                     Ok(Self::Window(WindowSubcommand::Send(tag)))
+                }
+                ("focus", Some(args)) => {
+                    let direction = utils::get_direction(args)?;
+                    Ok(Self::Window(WindowSubcommand::Focus(direction)))
                 }
                 _ => Err(ToCommandError { text: cmd_str }),
             },

@@ -2,7 +2,7 @@ use std::{error::Error, fs, str::FromStr};
 
 use x11rb::protocol::xproto::KeyButMask;
 
-use crate::{errors::ToCommandError, newtypes::Tag};
+use crate::{enums::Direction, errors::ToCommandError, newtypes::Tag};
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {
     // TODO: num lock is not always Mod2, find a way to get that dynamically
@@ -31,4 +31,15 @@ pub(crate) fn get_tag(args: &clap::ArgMatches) -> Result<Tag, ToCommandError> {
     let tag = args.value_of("tag").unwrap();
     let tag = Tag::from_str(tag)?;
     Ok(tag)
+}
+
+pub(crate) fn get_direction(args: &clap::ArgMatches) -> Result<Direction, ToCommandError> {
+    if args.value_of("direction").is_none() {
+        return Err(ToCommandError {
+            text: "Missing direction".to_string(),
+        });
+    }
+    let direction = args.value_of("direction").unwrap();
+    let direction = Direction::from_str(direction)?;
+    Ok(direction)
 }
