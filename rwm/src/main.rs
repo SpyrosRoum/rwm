@@ -70,7 +70,8 @@ fn main() {
         poller.wait(&mut events, None).unwrap();
         // We just want to iterate and modify them so we wait for the next event as well
         // By default once it gets the first event from a source it doesn't wait for another one again..
-        events.iter().for_each(|ev| {
+        // We use drain() because we want to clear the event for the next to go in
+        events.drain(..).for_each(|ev| {
             if ev.key == 1 {
                 poller
                     .modify(conn.stream(), polling::Event::readable(1))
@@ -101,9 +102,6 @@ fn main() {
             .ok(); // .ok() is used to basically just ignore the result
             stream.shutdown(Shutdown::Both).ok();
         };
-
-        // Clean the poller events so new can go in
-        events.clear();
     }
 
     utils::clean_up().expect("Failed to clean up.");
