@@ -1,7 +1,7 @@
 mod command;
 mod command_handlers;
 mod config;
-mod enums;
+mod direction;
 mod errors;
 mod event_handlers;
 mod focus_history;

@@ -2,7 +2,7 @@ use std::{error::Error, fs, str::FromStr};
 
 use x11rb::protocol::xproto::KeyButMask;
 
-use crate::{enums::Direction, errors::ToCommandError, newtypes::Tag};
+use crate::{direction::Direction, errors::ToCommandError, newtypes::Tag};
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {
     // TODO: num lock is not always Mod2, find a way to get that dynamically

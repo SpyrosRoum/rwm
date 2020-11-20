@@ -4,7 +4,7 @@ use x11rb::protocol::xproto::{ConfigureWindowAux, ConnectionExt, StackMode};
 
 use crate::{
     command::{TagSubCommand, WindowSubcommand},
-    enums::Direction,
+    direction::Direction,
     WMState,
 };
 

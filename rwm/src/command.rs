@@ -9,7 +9,7 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 
-use crate::{enums::Direction, errors::ToCommandError, newtypes::Tag, utils};
+use crate::{direction::Direction, errors::ToCommandError, newtypes::Tag, utils};
 
 #[derive(Debug)]
 pub(crate) enum TagSubCommand {
