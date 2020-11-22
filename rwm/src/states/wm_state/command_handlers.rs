@@ -5,6 +5,7 @@ use x11rb::protocol::xproto::{ConfigureWindowAux, ConnectionExt, StackMode};
 use crate::{
     command::{TagSubCommand, WindowSubcommand},
     direction::Direction,
+    utils::visible,
     WMState,
 };
 
@@ -12,19 +13,22 @@ impl<'a> WMState<'a> {
     pub(crate) fn on_tag_cmd(&mut self, sub: TagSubCommand) -> Result<(), Box<dyn Error>> {
         match sub {
             TagSubCommand::Toggle(tag) => {
-                // I know that it's possible to insert a tag that is already in, but we don't care
-                // because it's a hashset so it will be ignored
-                if self.tags.contains(&tag) && self.tags.len() > 1 {
-                    self.tags.remove(&tag);
-                } else {
-                    self.tags.insert(tag);
+                let one_vis = visible(&self.tags).len() == 1;
+                if let Some(mut tag_state) =
+                    self.tags.iter_mut().find(|tag_state| **tag_state == tag)
+                {
+                    if tag_state.visible && one_vis {
+                        return Ok(());
+                    }
+                    tag_state.visible = !tag_state.visible;
                 }
 
                 self.windows.find_focus(&self.tags);
             }
             TagSubCommand::Switch(tag) => {
-                self.tags.clear();
-                self.tags.insert(tag);
+                for tag_state in self.tags.iter_mut() {
+                    tag_state.visible = *tag_state == tag;
+                }
 
                 self.windows.find_focus(&self.tags);
             }
@@ -50,6 +54,11 @@ impl<'a> WMState<'a> {
             WindowSubcommand::Send(tag) => {
                 // We want a mutable window state so we get it again as mut
                 if let Some(focused_window) = self.windows.get_focused_mut() {
+                    let tag_state = self.tags.iter().find(|tag_state| **tag_state == tag);
+                    let tag = match tag_state {
+                        Some(t) => t.id,
+                        None => tag,
+                    };
                     focused_window.tags.clear();
                     focused_window.tags.insert(tag);
                 }

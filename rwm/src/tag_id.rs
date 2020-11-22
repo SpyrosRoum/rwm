@@ -2,21 +2,35 @@ use std::str::FromStr;
 
 use crate::errors::TagValueError;
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Ord, PartialOrd)]
-pub(crate) struct Tag(u8);
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub(crate) struct TagID(pub(crate) u8);
 
-impl Tag {
+impl TagID {
     pub(crate) fn new(tag: u8) -> Result<Self, TagValueError> {
         // Tags can only be from 1 to 9
         if tag < 1 || tag > 9 {
             Err(TagValueError { tag_num: tag })
         } else {
-            Ok(Tag(tag))
+            Ok(Self(tag))
         }
     }
 }
 
-impl FromStr for Tag {
+// impl TryFrom<u8> for TagID {
+//     type Error = TagValueError;
+//
+//     fn try_from(value: u8) -> Result<Self, Self::Error> {
+//         Self::new(value)
+//     }
+// }
+
+impl From<u8> for TagID {
+    fn from(value: u8) -> Self {
+        Self::new(value).unwrap()
+    }
+}
+
+impl FromStr for TagID {
     type Err = TagValueError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

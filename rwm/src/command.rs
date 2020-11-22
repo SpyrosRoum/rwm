@@ -9,18 +9,18 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 
-use crate::{direction::Direction, errors::ToCommandError, newtypes::Tag, utils};
+use crate::{direction::Direction, errors::ToCommandError, tag_id::TagID, utils};
 
 #[derive(Debug)]
 pub(crate) enum TagSubCommand {
-    Toggle(Tag),
-    Switch(Tag),
+    Toggle(TagID),
+    Switch(TagID),
 }
 
 #[derive(Debug)]
 pub(crate) enum WindowSubcommand {
     Destroy,
-    Send(Tag),
+    Send(TagID),
     Focus(Direction),
 }
 

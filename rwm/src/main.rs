@@ -3,8 +3,8 @@ mod config;
 mod direction;
 mod errors;
 mod focus_history;
-mod newtypes;
 mod states;
+mod tag_id;
 mod utils;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, process::exit};
@@ -17,7 +17,7 @@ use x11rb::{
 };
 
 use config::Config;
-use states::wm_state::WMState;
+use states::WMState;
 
 fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyError> {
     let change = ChangeWindowAttributesAux::default().event_mask(

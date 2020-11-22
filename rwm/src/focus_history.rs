@@ -1,8 +1,8 @@
-use std::collections::{vec_deque, HashSet, VecDeque};
+use std::collections::{vec_deque, VecDeque};
 
 use x11rb::protocol::xproto::Window;
 
-use crate::{newtypes::Tag, states::win_state::WinState};
+use crate::states::{TagState, WinState};
 
 /// A wrapper around a VecDequeue.
 /// Currently there is no way to keep a history when switching tags so
@@ -68,40 +68,39 @@ impl FocusHist {
     }
 
     /// Find the first window in the tags and set it as focused
-    pub(crate) fn find_focus(&mut self, tags: &HashSet<Tag>) -> Option<usize> {
-        self.cur = self
-            .windows
-            .iter()
-            .position(|win| tags.iter().any(|tag| win.tags.contains(tag)));
+    pub(crate) fn find_focus(&mut self, tags: &[TagState]) -> Option<usize> {
+        self.cur = self.windows.iter().position(|win| {
+            tags.iter()
+                .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+        });
         self.cur
     }
 
     /// Give focus to the next window with the correct tags
-    pub(crate) fn focus_next(&mut self, tags: &HashSet<Tag>) {
+    pub(crate) fn focus_next(&mut self, tags: &[TagState]) {
         if let Some(index) = self.cur {
-            let next = self
-                .windows
-                .iter()
-                .skip(index + 1)
-                .position(|win| tags.iter().any(|tag| win.tags.contains(tag)));
+            let next = self.windows.iter().skip(index + 1).position(|win| {
+                tags.iter()
+                    .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+            });
 
             self.cur = match next {
                 Some(v) => Some(v + index + 1),
-                None => self
-                    .windows
-                    .iter()
-                    .position(|win| tags.iter().any(|tag| win.tags.contains(tag))),
+                None => self.windows.iter().position(|win| {
+                    tags.iter()
+                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+                }),
             };
         } else {
-            self.cur = self
-                .windows
-                .iter()
-                .position(|win| tags.iter().any(|tag| win.tags.contains(tag)));
+            self.cur = self.windows.iter().position(|win| {
+                tags.iter()
+                    .any(|&tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+            });
         }
     }
 
     /// Give focus to the previous window with the correct tags
-    pub(crate) fn focus_prev(&mut self, tags: &HashSet<Tag>) {
+    pub(crate) fn focus_prev(&mut self, tags: &[TagState]) {
         if let Some(index) = self.cur {
             let prev = self
                 .windows
@@ -109,7 +108,10 @@ impl FocusHist {
                 .enumerate()
                 .take(index)
                 .rev()
-                .find(|(_, win)| tags.iter().any(|tag| win.tags.contains(tag)))
+                .find(|(_, win)| {
+                    tags.iter()
+                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+                })
                 .map(|(i, _)| i);
 
             self.cur = match prev {
@@ -119,7 +121,10 @@ impl FocusHist {
                     .iter()
                     .enumerate()
                     .rev()
-                    .find(|(_, win)| tags.iter().any(|tag| win.tags.contains(tag)))
+                    .find(|(_, win)| {
+                        tags.iter()
+                            .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+                    })
                     .map(|(i, _)| i),
             };
         } else {
@@ -129,7 +134,10 @@ impl FocusHist {
                 .iter()
                 .enumerate()
                 .rev()
-                .find(|(_, win)| tags.iter().any(|tag| win.tags.contains(tag)))
+                .find(|(_, win)| {
+                    tags.iter()
+                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+                })
                 .map(|(i, _)| i);
         }
     }

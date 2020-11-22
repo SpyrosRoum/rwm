@@ -1,7 +1,7 @@
 mod command_handlers;
 mod event_handlers;
 
-use std::{collections::HashSet, error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
+use std::{error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
 
 use x11rb::{
     connection::Connection,
@@ -11,8 +11,10 @@ use x11rb::{
 };
 
 use crate::{
-    command::Command, config::Config, focus_history::FocusHist, newtypes::Tag,
-    states::win_state::WinState,
+    command::Command,
+    config::Config,
+    focus_history::FocusHist,
+    states::{TagState, WinState},
 };
 
 #[derive(Debug)]
@@ -27,14 +29,14 @@ pub struct WMState<'a> {
     /// to the mouse.
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
     /// The tags that are currently visible
-    pub(crate) tags: HashSet<Tag>,
+    pub(crate) tags: Vec<TagState>,
 }
 
 impl<'a> WMState<'a> {
     pub(crate) fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
         // tags are 1-9 and the default is 1
-        let mut tags = HashSet::with_capacity(9);
-        tags.insert(Tag::new(1).unwrap());
+        let mut tags: Vec<TagState> = (1..=9).map(|i| TagState::new(i, false).unwrap()).collect();
+        tags[0].visible = true;
         Self {
             conn,
             config,
@@ -117,7 +119,7 @@ impl<'a> WMState<'a> {
         // self.tags.clone() because the new window will be in the currently viewable tags
         // We also push at the front of the focus history because the window now has focus
         self.windows
-            .push_front(WinState::new(window, &geom, self.tags.clone()));
+            .push_front(WinState::new(window, &geom, self.tags.as_slice()));
 
         self.update_windows()?;
         Ok(())
@@ -189,7 +191,11 @@ impl<'a> WMState<'a> {
     pub(crate) fn update_windows(&mut self) -> Result<(), ReplyOrIdError> {
         // Map the proper windows and unmap the rest
         for win in self.windows.iter() {
-            if self.tags.iter().any(|tag| win.tags.contains(tag)) {
+            if self
+                .tags
+                .iter()
+                .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+            {
                 let attrs = ChangeWindowAttributesAux::default()
                     .border_pixel(self.config.normal_border_color);
                 self.conn.change_window_attributes(win.id, &attrs)?;
