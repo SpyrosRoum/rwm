@@ -1,3 +1,6 @@
+mod command_handlers;
+mod event_handlers;
+
 use std::{collections::HashSet, error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
 
 use x11rb::{
@@ -7,18 +10,10 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use crate::{command::Command, config::Config, focus_history::FocusHist, newtypes::Tag};
-
-#[derive(Debug, PartialEq)]
-pub struct WinState {
-    pub(crate) id: Window,
-    x: i16,
-    y: i16,
-    width: u16,
-    height: u16,
-    /// The tags that this window is on
-    pub(crate) tags: HashSet<Tag>,
-}
+use crate::{
+    command::Command, config::Config, focus_history::FocusHist, newtypes::Tag,
+    states::win_state::WinState,
+};
 
 #[derive(Debug)]
 pub struct WMState<'a> {
@@ -35,21 +30,8 @@ pub struct WMState<'a> {
     pub(crate) tags: HashSet<Tag>,
 }
 
-impl WinState {
-    pub(crate) fn new(win: Window, geom: &GetGeometryReply, tags: HashSet<Tag>) -> Self {
-        Self {
-            id: win,
-            x: geom.x,
-            y: geom.y,
-            width: geom.width,
-            height: geom.height,
-            tags,
-        }
-    }
-}
-
 impl<'a> WMState<'a> {
-    pub fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
+    pub(crate) fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
         // tags are 1-9 and the default is 1
         let mut tags = HashSet::with_capacity(9);
         tags.insert(Tag::new(1).unwrap());

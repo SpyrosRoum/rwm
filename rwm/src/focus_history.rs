@@ -2,7 +2,7 @@ use std::collections::{vec_deque, HashSet, VecDeque};
 
 use x11rb::protocol::xproto::Window;
 
-use crate::{newtypes::Tag, states::WinState};
+use crate::{newtypes::Tag, states::win_state::WinState};
 
 /// A wrapper around a VecDequeue.
 /// Currently there is no way to keep a history when switching tags so

@@ -1,9 +1,7 @@
 mod command;
-mod command_handlers;
 mod config;
 mod direction;
 mod errors;
-mod event_handlers;
 mod focus_history;
 mod newtypes;
 mod states;
@@ -19,7 +17,7 @@ use x11rb::{
 };
 
 use config::Config;
-use states::WMState;
+use states::wm_state::WMState;
 
 fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyError> {
     let change = ChangeWindowAttributesAux::default().event_mask(
