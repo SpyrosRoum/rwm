@@ -14,6 +14,7 @@ use crate::{
     command::Command,
     config::Config,
     focus_history::FocusHist,
+    layouts::LayoutType,
     states::{TagState, WinState},
 };
 
@@ -30,12 +31,16 @@ pub struct WMState<'a> {
     pub(crate) selected_window: Option<(Window, (i16, i16))>,
     /// The tags that are currently visible
     pub(crate) tags: Vec<TagState>,
+    pub(crate) layout: LayoutType,
 }
 
 impl<'a> WMState<'a> {
     pub(crate) fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
+        let def_layout = config.layouts[0];
         // tags are 1-9 and the default is 1
-        let mut tags: Vec<TagState> = (1..=9).map(|i| TagState::new(i, false).unwrap()).collect();
+        let mut tags: Vec<TagState> = (1..=9)
+            .map(|i| TagState::new(i, false, def_layout).unwrap())
+            .collect();
         tags[0].visible = true;
         Self {
             conn,
@@ -45,6 +50,7 @@ impl<'a> WMState<'a> {
             windows: FocusHist::new(),
             selected_window: None,
             tags,
+            layout: def_layout,
         }
     }
 
@@ -73,6 +79,8 @@ impl<'a> WMState<'a> {
             }
         }
 
+        // Note: We don't call self.update_windows() or self.layout.update()
+        // because both get called in self.manage_window()
         Ok(())
     }
 
@@ -138,7 +146,7 @@ impl<'a> WMState<'a> {
         }
 
         self.windows.retain(|win_state| win_state.id != window);
-        Ok(())
+        self.update_windows()
     }
 
     /// Handle events from the X server
@@ -187,8 +195,10 @@ impl<'a> WMState<'a> {
         Ok(())
     }
 
-    /// Called when there is a change like a tag introduced
+    /// Update the currently visible windows
     pub(crate) fn update_windows(&mut self) -> Result<(), ReplyOrIdError> {
+        // Should this be replaced entirely by layout.update()?
+
         // Map the proper windows and unmap the rest
         for win in self.windows.iter() {
             if self
@@ -211,6 +221,18 @@ impl<'a> WMState<'a> {
             self.conn.change_window_attributes(focused.id, &attrs)?;
         }
 
-        Ok(())
+        let visible_tags = self
+            .tags
+            .iter()
+            .filter(|tag_state| tag_state.visible)
+            .map(|tag_state| tag_state.id)
+            .collect::<Vec<_>>();
+        self.layout.update(
+            &self.conn,
+            &self.windows,
+            visible_tags,
+            self.screen_num,
+            self.config.border_width,
+        )
     }
 }

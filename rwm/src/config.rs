@@ -1,5 +1,7 @@
 use x11rb::protocol::xproto::ModMask;
 
+use crate::layouts::LayoutType;
+
 #[derive(Debug)]
 pub struct Config {
     pub(crate) border_width: u32,
@@ -7,6 +9,8 @@ pub struct Config {
     pub(crate) focused_border_color: u32,
     pub(crate) normal_border_color: u32,
     pub(crate) mod_key: ModMask,
+    /// First one is the default
+    pub(crate) layouts: Vec<LayoutType>,
 }
 
 impl Default for Config {
@@ -32,6 +36,7 @@ impl Default for Config {
             focused_border_color: blue,
             normal_border_color: gray,
             mod_key: ModMask::M1, // left alt
+            layouts: vec![LayoutType::MonadTall, LayoutType::Floating],
         }
     }
 }

@@ -3,6 +3,7 @@ mod config;
 mod direction;
 mod errors;
 mod focus_history;
+mod layouts;
 mod states;
 mod tag_id;
 mod utils;

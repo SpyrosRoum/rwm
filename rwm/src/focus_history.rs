@@ -2,7 +2,10 @@ use std::collections::{vec_deque, VecDeque};
 
 use x11rb::protocol::xproto::Window;
 
-use crate::states::{TagState, WinState};
+use crate::{
+    states::{TagState, WinState},
+    tag_id::TagID,
+};
 
 /// A wrapper around a VecDequeue.
 /// Currently there is no way to keep a history when switching tags so
@@ -11,7 +14,7 @@ use crate::states::{TagState, WinState};
 pub(crate) struct FocusHist {
     windows: VecDeque<WinState>,
     /// The currently focused window in the list, if the list is empty, this is none
-    pub(crate) cur: Option<usize>,
+    cur: Option<usize>,
 }
 
 impl FocusHist {
@@ -24,6 +27,12 @@ impl FocusHist {
 
     pub(crate) fn iter(&self) -> vec_deque::Iter<'_, WinState> {
         self.windows.iter()
+    }
+
+    pub(crate) fn iter_on_tags(&self, tags: Vec<TagID>) -> impl Iterator<Item = &WinState> {
+        self.windows
+            .iter()
+            .filter(move |&win| tags.iter().any(|tag| win.tags.contains(tag)))
     }
 
     /// Adds a WinState to front of the history and gives it focus.

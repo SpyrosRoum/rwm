@@ -1,19 +1,10 @@
-use crate::{errors::TagValueError, tag_id::TagID};
+use crate::{errors::TagValueError, layouts::LayoutType, tag_id::TagID};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TagState {
     pub(crate) id: TagID,
     pub(crate) visible: bool,
-}
-
-impl From<TagID> for TagState {
-    // We only care about the tag number since this is what's used for comparisons
-    fn from(tag: TagID) -> Self {
-        Self {
-            id: tag,
-            visible: false,
-        }
-    }
+    pub(crate) layout: LayoutType,
 }
 
 impl PartialEq for TagState {
@@ -29,7 +20,7 @@ impl PartialEq<TagID> for TagState {
 }
 
 impl TagState {
-    pub(crate) fn new(tag: u8, visible: bool) -> Result<Self, TagValueError> {
+    pub(crate) fn new(tag: u8, visible: bool, layout: LayoutType) -> Result<Self, TagValueError> {
         // Tags can only be from 1 to 9
         if tag < 1 || tag > 9 {
             Err(TagValueError { tag_num: tag })
@@ -37,6 +28,7 @@ impl TagState {
             Ok(Self {
                 id: tag.into(),
                 visible,
+                layout,
             })
         }
     }

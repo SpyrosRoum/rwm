@@ -27,7 +27,12 @@ impl<'a> WMState<'a> {
             }
             TagSubCommand::Switch(tag) => {
                 for tag_state in self.tags.iter_mut() {
-                    tag_state.visible = *tag_state == tag;
+                    if *tag_state == tag {
+                        tag_state.visible = true;
+                        self.layout = tag_state.layout;
+                    } else {
+                        tag_state.visible = false;
+                    }
                 }
 
                 self.windows.find_focus(&self.tags);
