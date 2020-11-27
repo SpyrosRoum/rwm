@@ -1,3 +1,4 @@
+mod grid;
 mod monad_tall;
 
 use x11rb::{errors::ReplyOrIdError, rust_connection::RustConnection};
@@ -7,6 +8,7 @@ use crate::{focus_history::FocusHist, tag_id::TagID};
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum LayoutType {
     MonadTall,
+    Grid,
     Floating,
 }
 
@@ -24,6 +26,7 @@ impl LayoutType {
                 monad_tall::update(conn, focus, tags, screen_num, border_width)?
             }
             LayoutType::Floating => {} // We don't have anything to do
+            LayoutType::Grid => grid::update(conn, focus, tags, screen_num, border_width)?,
         };
 
         Ok(())

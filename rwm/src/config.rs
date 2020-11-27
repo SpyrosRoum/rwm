@@ -36,7 +36,11 @@ impl Default for Config {
             focused_border_color: blue,
             normal_border_color: gray,
             mod_key: ModMask::M1, // left alt
-            layouts: vec![LayoutType::MonadTall, LayoutType::Floating],
+            layouts: vec![
+                LayoutType::MonadTall,
+                LayoutType::Grid,
+                LayoutType::Floating,
+            ],
         }
     }
 }
