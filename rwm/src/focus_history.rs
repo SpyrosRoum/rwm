@@ -1,4 +1,7 @@
-use std::collections::{vec_deque, VecDeque};
+use std::{
+    cmp::Ordering,
+    collections::{vec_deque, VecDeque},
+};
 
 use x11rb::protocol::xproto::Window;
 
@@ -49,11 +52,45 @@ impl FocusHist {
         }
     }
 
-    pub(crate) fn retain<F>(&mut self, f: F)
-    where
-        F: FnMut(&WinState) -> bool,
-    {
-        self.windows.retain(f);
+    /// "Forget" a window and update self.cur to reflect the change
+    pub(crate) fn forget(&mut self, win_id: Window, tags: &[TagState]) {
+        let pos = self.windows.iter().position(|win| win.id == win_id);
+
+        if pos.is_none() {
+            return;
+        }
+        let pos = pos.unwrap();
+
+        self.windows.remove(pos);
+        if self.windows.is_empty() {
+            self.cur = None;
+            return;
+        }
+
+        if self.cur.is_none() {
+            return;
+        }
+        let cur = self.cur.unwrap();
+        // We need to change the position of self.cur or it will be outdated
+        match pos.cmp(&cur) {
+            Ordering::Less => self.cur = Some(cur - 1),
+            Ordering::Greater => { /* We don't need to do anything here */ }
+            Ordering::Equal => {
+                // Basically what we do in self.focus_next()
+                let next = self.windows.iter().skip(cur).position(|win| {
+                    tags.iter()
+                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+                });
+
+                self.cur = match next {
+                    Some(v) => Some(v + cur),
+                    None => self.windows.iter().position(|win| {
+                        tags.iter()
+                            .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+                    }),
+                };
+            }
+        }
     }
 
     /// Get the Window State and the index of it in the vec

@@ -139,13 +139,7 @@ impl<'a> WMState<'a> {
         self.conn
             .ungrab_button(ButtonIndex::Any, window, ModMask::Any)?;
 
-        if let Some(focused) = self.windows.get_focused() {
-            if focused.id == window {
-                self.windows.focus_next(&self.tags);
-            }
-        }
-
-        self.windows.retain(|win_state| win_state.id != window);
+        self.windows.forget(window, self.tags.as_slice());
         self.update_windows()
     }
 
