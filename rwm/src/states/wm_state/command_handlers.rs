@@ -74,17 +74,16 @@ impl<'a> WMState<'a> {
             WindowSubcommand::Focus(dir) => {
                 self.on_window_focus(dir)?;
             }
-            WindowSubcommand::Toggle(option) =>
-                {
-                    match option {
-                        WindowToggle::Float => {
-                            if let Some(focused_window) = self.windows.get_focused_mut() {
-                                focused_window.floating = !focused_window.floating;
-                            }
+            WindowSubcommand::Toggle(option) => {
+                match option {
+                    WindowToggle::Float => {
+                        if let Some(focused_window) = self.windows.get_focused_mut() {
+                            focused_window.floating = !focused_window.floating;
                         }
                     }
-                    self.update_windows()?;
-                },
+                }
+                self.update_windows()?;
+            }
         };
 
         self.update_windows()?;

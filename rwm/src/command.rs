@@ -110,15 +110,8 @@ impl FromStr for Command {
                     Ok(Self::Window(WindowSubcommand::Focus(direction)))
                 }
                 ("toggle", Some(args)) => {
-                    if args.value_of("option").is_none() {
-                        return Err(ToCommandError { text: cmd_str });
-                    }
-                    let option = args.value_of("option").unwrap();
-                    if option.trim().to_lowercase() != "float" {
-                        Err(ToCommandError { text: cmd_str })
-                    } else {
-                        Ok(Self::Window(WindowSubcommand::Toggle(WindowToggle::Float)))
-                    }
+                    let option = utils::get_window_option(&args)?;
+                    Ok(Self::Window(WindowSubcommand::Toggle(option)))
                 }
                 _ => Err(ToCommandError { text: cmd_str }),
             },

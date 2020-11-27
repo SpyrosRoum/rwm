@@ -210,12 +210,6 @@ impl<'a> WMState<'a> {
                 let attrs = ChangeWindowAttributesAux::default()
                     .border_pixel(self.config.normal_border_color);
                 self.conn.change_window_attributes(win.id, &attrs)?;
-                // TODO I can probably do this better than just setting the border width for every window again
-                // This is done so if the master win gets dragged, it has a border
-                self.conn.configure_window(
-                    win.id,
-                    &ConfigureWindowAux::new().border_width(self.config.border_width),
-                )?;
                 self.conn.map_window(win.id)?;
             } else {
                 self.conn.unmap_window(win.id)?;

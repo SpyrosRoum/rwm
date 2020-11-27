@@ -25,6 +25,10 @@ impl<'a> WMState<'a> {
             let (x, y) = (-event.event_x, -event.event_y);
             self.selected_window = Some((window.id, (x, y)));
             window.floating = true;
+            self.conn.configure_window(
+                window.id,
+                &ConfigureWindowAux::new().border_width(self.config.border_width),
+            )?;
         }
         Ok(())
     }
