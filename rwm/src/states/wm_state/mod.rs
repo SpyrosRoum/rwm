@@ -11,7 +11,7 @@ use x11rb::{
 };
 
 use crate::{
-    command::Command,
+    command::{Command, LayoutSubcommand},
     config::Config,
     focus_history::FocusHist,
     layouts::LayoutType,
@@ -184,6 +184,13 @@ impl<'a> WMState<'a> {
             }
             Command::Tag(sub) => self.on_tag_cmd(sub)?,
             Command::Window(sub) => self.on_window_cmd(sub)?,
+            Command::Layout(sub) => {
+                self.layout = match sub {
+                    LayoutSubcommand::Next => self.layout.next(&self.config.layouts),
+                    LayoutSubcommand::Prev => self.layout.prev(&self.config.layouts),
+                };
+                self.update_windows()?
+            }
         }
 
         Ok(())

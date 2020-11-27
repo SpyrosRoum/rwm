@@ -38,9 +38,7 @@ impl LayoutType {
     /// Find the previous layout in the list
     pub(crate) fn prev(&self, layouts: &[Self]) -> Self {
         let cur_pos = layouts.iter().position(|cur| cur == self).unwrap();
-        layouts
-            .get(cur_pos - 1)
-            .unwrap_or(&layouts.last().unwrap())
-            .to_owned()
+        let new = cur_pos.checked_sub(1).unwrap_or(layouts.len() - 1);
+        layouts[new].to_owned()
     }
 }

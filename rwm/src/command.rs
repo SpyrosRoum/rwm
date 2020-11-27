@@ -4,6 +4,8 @@
 // tag toggle {tag number}
 // window destroy/kill
 // window focus {direction}
+// layout next
+// layout prev/previous
 
 use std::str::FromStr;
 
@@ -22,10 +24,16 @@ pub(crate) enum WindowSubcommand {
     Focus(Direction),
 }
 
+pub(crate) enum LayoutSubcommand {
+    Next,
+    Prev,
+}
+
 pub(crate) enum Command {
     Quit,
     Tag(TagSubCommand),
     Window(WindowSubcommand),
+    Layout(LayoutSubcommand),
 }
 
 impl FromStr for Command {
@@ -57,6 +65,11 @@ impl FromStr for Command {
                         SubCommand::with_name("focus").arg(Arg::with_name("direction").index(1)),
                     ),
             )
+            .subcommand(
+                SubCommand::with_name("layout")
+                    .subcommand(SubCommand::with_name("next"))
+                    .subcommand(SubCommand::with_name("previous").alias("prev")),
+            )
             .get_matches_from_safe(&cmd_parts);
 
         if command.is_err() {
@@ -87,6 +100,11 @@ impl FromStr for Command {
                     let direction = utils::get_direction(args)?;
                     Ok(Self::Window(WindowSubcommand::Focus(direction)))
                 }
+                _ => Err(ToCommandError { text: cmd_str }),
+            },
+            ("layout", Some(subcommands)) => match subcommands.subcommand() {
+                ("next", _) => Ok(Self::Layout(LayoutSubcommand::Next)),
+                ("previous", _) => Ok(Self::Layout(LayoutSubcommand::Prev)),
                 _ => Err(ToCommandError { text: cmd_str }),
             },
             _ => Err(ToCommandError { text: cmd_str }),
