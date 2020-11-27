@@ -101,6 +101,14 @@ impl FocusHist {
             .find(|(_i, win)| win.id == id)
     }
 
+    /// Get a mutable Window State and the index of it in the vec
+    pub(crate) fn find_by_id_mut(&mut self, id: Window) -> Option<(usize, &mut WinState)> {
+        self.windows
+            .iter_mut()
+            .enumerate()
+            .find(|(_i, win)| win.id == id)
+    }
+
     /// Get a reference to the focused window
     pub(crate) fn get_focused(&self) -> Option<&WinState> {
         let index = self.cur?;

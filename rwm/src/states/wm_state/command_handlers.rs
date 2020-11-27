@@ -2,6 +2,7 @@ use std::error::Error;
 
 use x11rb::protocol::xproto::{ConfigureWindowAux, ConnectionExt, StackMode};
 
+use crate::command::WindowToggle;
 use crate::{
     command::{TagSubCommand, WindowSubcommand},
     direction::Direction,
@@ -73,6 +74,17 @@ impl<'a> WMState<'a> {
             WindowSubcommand::Focus(dir) => {
                 self.on_window_focus(dir)?;
             }
+            WindowSubcommand::Toggle(option) =>
+                {
+                    match option {
+                        WindowToggle::Float => {
+                            if let Some(focused_window) = self.windows.get_focused_mut() {
+                                focused_window.floating = !focused_window.floating;
+                            }
+                        }
+                    }
+                    self.update_windows()?;
+                },
         };
 
         self.update_windows()?;

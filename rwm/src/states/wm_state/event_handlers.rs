@@ -21,9 +21,10 @@ impl<'a> WMState<'a> {
             return Ok(());
         }
 
-        if let Some((_, window)) = self.windows.find_by_id(event.event) {
+        if let Some((_, mut window)) = self.windows.find_by_id_mut(event.event) {
             let (x, y) = (-event.event_x, -event.event_y);
             self.selected_window = Some((window.id, (x, y)));
+            window.floating = true;
         }
         Ok(())
     }
@@ -41,6 +42,7 @@ impl<'a> WMState<'a> {
                 self.conn
                     .configure_window(window, &ConfigureWindowAux::new().x(x).y(y))?;
             }
+            self.update_windows()?;
         }
         Ok(())
     }

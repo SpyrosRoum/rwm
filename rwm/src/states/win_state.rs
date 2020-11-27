@@ -13,6 +13,8 @@ pub struct WinState {
     height: u16,
     /// The tags that this window is on
     pub(crate) tags: HashSet<TagID>,
+    /// If true then ignoring when tilling windows
+    pub(crate) floating: bool,
 }
 
 impl WinState {
@@ -28,6 +30,7 @@ impl WinState {
                 .filter(|tag_state| tag_state.visible)
                 .map(|tag_state| tag_state.id)
                 .collect(),
+            floating: false,
         }
     }
 }

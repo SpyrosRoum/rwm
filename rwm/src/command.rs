@@ -4,6 +4,7 @@
 // tag toggle {tag number}
 // window destroy/kill
 // window focus {direction}
+// window toggle float
 // layout next
 // layout prev/previous
 
@@ -18,10 +19,15 @@ pub(crate) enum TagSubCommand {
     Switch(TagID),
 }
 
+pub(crate) enum WindowToggle {
+    Float,
+}
+
 pub(crate) enum WindowSubcommand {
     Destroy,
     Send(TagID),
     Focus(Direction),
+    Toggle(WindowToggle),
 }
 
 pub(crate) enum LayoutSubcommand {
@@ -63,6 +69,9 @@ impl FromStr for Command {
                     .subcommand(SubCommand::with_name("send").arg(Arg::with_name("tag").index(1)))
                     .subcommand(
                         SubCommand::with_name("focus").arg(Arg::with_name("direction").index(1)),
+                    )
+                    .subcommand(
+                        SubCommand::with_name("toggle").arg(Arg::with_name("option").index(1)),
                     ),
             )
             .subcommand(
@@ -99,6 +108,17 @@ impl FromStr for Command {
                 ("focus", Some(args)) => {
                     let direction = utils::get_direction(args)?;
                     Ok(Self::Window(WindowSubcommand::Focus(direction)))
+                }
+                ("toggle", Some(args)) => {
+                    if args.value_of("option").is_none() {
+                        return Err(ToCommandError { text: cmd_str });
+                    }
+                    let option = args.value_of("option").unwrap();
+                    if option.trim().to_lowercase() != "float" {
+                        Err(ToCommandError { text: cmd_str })
+                    } else {
+                        Ok(Self::Window(WindowSubcommand::Toggle(WindowToggle::Float)))
+                    }
                 }
                 _ => Err(ToCommandError { text: cmd_str }),
             },

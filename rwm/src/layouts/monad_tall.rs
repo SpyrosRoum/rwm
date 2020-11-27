@@ -23,7 +23,7 @@ pub(crate) fn update(
     let master_width = width * 60 / 100;
     let slave_width = width - master_width;
 
-    let mut windows = focus.iter_on_tags(tags);
+    let mut windows = focus.iter_on_tags(tags).filter(|win| !win.floating);
 
     let master_win = windows.next();
     if master_win.is_none() {
