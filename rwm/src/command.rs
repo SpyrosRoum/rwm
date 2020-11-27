@@ -11,20 +11,17 @@ use clap::{App, AppSettings, Arg, SubCommand};
 
 use crate::{direction::Direction, errors::ToCommandError, tag_id::TagID, utils};
 
-#[derive(Debug)]
 pub(crate) enum TagSubCommand {
     Toggle(TagID),
     Switch(TagID),
 }
 
-#[derive(Debug)]
 pub(crate) enum WindowSubcommand {
     Destroy,
     Send(TagID),
     Focus(Direction),
 }
 
-#[derive(Debug)]
 pub(crate) enum Command {
     Quit,
     Tag(TagSubCommand),
