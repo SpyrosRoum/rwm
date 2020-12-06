@@ -5,10 +5,8 @@ use std::{
 
 use x11rb::protocol::xproto::Window;
 
-use crate::{
-    states::{TagState, WinState},
-    tag_id::TagID,
-};
+use crate::states::{TagState, WinState};
+use common::TagID;
 
 /// A wrapper around a VecDequeue.
 /// Currently there is no way to keep a history when switching tags so

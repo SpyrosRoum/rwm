@@ -5,7 +5,8 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use crate::{focus_history::FocusHist, tag_id::TagID};
+use crate::focus_history::FocusHist;
+use common::TagID;
 
 pub(crate) fn update(
     conn: &RustConnection,

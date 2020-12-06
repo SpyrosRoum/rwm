@@ -2,21 +2,16 @@ use std::error::Error;
 
 use x11rb::protocol::xproto::{ConfigureWindowAux, ConnectionExt, StackMode};
 
-use crate::command::WindowToggle;
-use crate::{
-    command::{TagSubCommand, WindowSubcommand},
-    direction::Direction,
-    utils::visible,
-    WMState,
-};
+use crate::{utils::visible, WMState};
+use common::{Direction, TagSubcommand, WindowSubcommand, WindowToggle};
 
 impl<'a> WMState<'a> {
-    pub(crate) fn on_tag_cmd(&mut self, sub: TagSubCommand) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn on_tag_cmd(&mut self, sub: TagSubcommand) -> Result<(), Box<dyn Error>> {
         match sub {
-            TagSubCommand::Toggle(tag) => {
+            TagSubcommand::Toggle { tag_id } => {
                 let one_vis = visible(&self.tags).len() == 1;
                 if let Some(mut tag_state) =
-                    self.tags.iter_mut().find(|tag_state| **tag_state == tag)
+                    self.tags.iter_mut().find(|tag_state| **tag_state == tag_id)
                 {
                     if tag_state.visible && one_vis {
                         return Ok(());
@@ -26,9 +21,9 @@ impl<'a> WMState<'a> {
 
                 self.windows.find_focus(&self.tags);
             }
-            TagSubCommand::Switch(tag) => {
+            TagSubcommand::Switch { tag_id } => {
                 for tag_state in self.tags.iter_mut() {
-                    if *tag_state == tag {
+                    if *tag_state == tag_id {
                         tag_state.visible = true;
                         self.layout = tag_state.layout;
                     } else {
@@ -57,13 +52,13 @@ impl<'a> WMState<'a> {
                 self.windows.focus_next(&self.tags);
                 self.update_windows()?;
             }
-            WindowSubcommand::Send(tag) => {
+            WindowSubcommand::Send { tag_id } => {
                 // We want a mutable window state so we get it again as mut
                 if let Some(focused_window) = self.windows.get_focused_mut() {
-                    let tag_state = self.tags.iter().find(|tag_state| **tag_state == tag);
+                    let tag_state = self.tags.iter().find(|tag_state| **tag_state == tag_id);
                     let tag = match tag_state {
                         Some(t) => t.id,
-                        None => tag,
+                        None => tag_id,
                     };
                     focused_window.tags.clear();
                     focused_window.tags.insert(tag);

@@ -1,11 +1,7 @@
-mod command;
 mod config;
-mod direction;
-mod errors;
 mod focus_history;
 mod layouts;
 mod states;
-mod tag_id;
 mod utils;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, process::exit};

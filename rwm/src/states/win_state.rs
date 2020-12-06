@@ -2,7 +2,8 @@ use std::collections::HashSet;
 
 use x11rb::protocol::xproto::*;
 
-use crate::{states::TagState, tag_id::TagID};
+use crate::states::TagState;
+use common::TagID;
 
 #[derive(Debug, PartialEq)]
 pub struct WinState {

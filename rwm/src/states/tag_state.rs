@@ -1,4 +1,6 @@
-use crate::{errors::TagValueError, layouts::LayoutType, tag_id::TagID};
+use crate::layouts::LayoutType;
+use common::{TagID, TagValueError};
+use std::convert::TryInto;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TagState {
@@ -21,15 +23,10 @@ impl PartialEq<TagID> for TagState {
 
 impl TagState {
     pub(crate) fn new(tag: u8, visible: bool, layout: LayoutType) -> Result<Self, TagValueError> {
-        // Tags can only be from 1 to 9
-        if tag < 1 || tag > 9 {
-            Err(TagValueError { tag_num: tag })
-        } else {
-            Ok(Self {
-                id: tag.into(),
-                visible,
-                layout,
-            })
-        }
+        Ok(Self {
+            id: tag.try_into()?,
+            visible,
+            layout,
+        })
     }
 }

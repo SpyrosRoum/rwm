@@ -1,7 +1,7 @@
 mod command_handlers;
 mod event_handlers;
 
-use std::{error::Error, io::Read, os::unix::net::UnixStream, str::FromStr};
+use std::{error::Error, io::Read, os::unix::net::UnixStream};
 
 use x11rb::{
     connection::Connection,
@@ -11,12 +11,13 @@ use x11rb::{
 };
 
 use crate::{
-    command::{Command, LayoutSubcommand},
+    // command::{Command, LayoutSubcommand},
     config::Config,
     focus_history::FocusHist,
     layouts::LayoutType,
     states::{TagState, WinState},
 };
+use common::{Command, LayoutSubcommand};
 
 #[derive(Debug)]
 pub struct WMState<'a> {
@@ -170,7 +171,7 @@ impl<'a> WMState<'a> {
         let mut handle = stream.take(cmd_len as u64);
         let mut cmd = String::with_capacity(cmd_len);
         handle.read_to_string(&mut cmd)?;
-        let cmd = Command::from_str(&cmd)?;
+        let cmd: Command = serde_json::from_str(&cmd)?;
         self.handle_command(cmd)?;
 
         Ok(())

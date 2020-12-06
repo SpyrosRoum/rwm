@@ -1,0 +1,11 @@
+[package]
+name = "common"
+version = "0.1.0"
+authors = ["Spyros Roum <spyrosr1@gmail.com>"]
+edition = "2018"
+
+
+[dependencies]
+structopt = "0.3"
+serde = { version = "1", features=["derive"] }
+derive_more = "0.99"

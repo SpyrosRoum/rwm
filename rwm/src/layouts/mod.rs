@@ -3,7 +3,8 @@ mod monad_tall;
 
 use x11rb::{errors::ReplyOrIdError, rust_connection::RustConnection};
 
-use crate::{focus_history::FocusHist, tag_id::TagID};
+use crate::focus_history::FocusHist;
+use common::TagID;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum LayoutType {

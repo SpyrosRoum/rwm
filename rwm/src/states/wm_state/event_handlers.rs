@@ -17,7 +17,7 @@ impl<'a> WMState<'a> {
         }
 
         // We only care if mod key is being pressed as well
-        if clean_mask(event.state) != self.config.mod_key.into() {
+        if clean_mask(event.state) != self.config.mod_key as u16 {
             return Ok(());
         }
 
