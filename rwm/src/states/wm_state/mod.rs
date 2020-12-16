@@ -221,6 +221,9 @@ impl<'a> WMState<'a> {
             let attrs =
                 ChangeWindowAttributesAux::default().border_pixel(self.config.focused_border_color);
             self.conn.change_window_attributes(focused.id, &attrs)?;
+            // Give keyboard input to window
+            self.conn
+                .set_input_focus(InputFocus::None, focused.id, x11rb::CURRENT_TIME)?;
         }
 
         let visible_tags = self
