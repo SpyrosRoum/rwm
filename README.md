@@ -7,6 +7,6 @@ It's written in Rust using [bindings](https://crates.io/crates/x11rb) to the xcb
 This is not a viable window manager yet, but it's coming together nicely.
 It still has many missing features but the greatest issues are:
 * No multi monitor support at all
-* zero coverage of ICCCM or EWMH
+* Zero coverage of ICCCM or EWMH
 
 There are other issues too but since the project is under active development and improvements/fixes/features are happening constantly, I don't think they are worth mentioning.
