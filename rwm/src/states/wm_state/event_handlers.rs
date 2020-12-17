@@ -65,12 +65,8 @@ impl<'a> WMState<'a> {
                 self.selected_window = None;
             }
         }
-        Ok(())
-    }
-
-    pub(crate) fn on_focus_in(&mut self, event: FocusInEvent) -> Result<(), ReplyOrIdError> {
-        self.windows.set_focused(event.event);
-        self.update_windows()?;
+        if self.resizing_window.is_some() {
+        }
         Ok(())
     }
 

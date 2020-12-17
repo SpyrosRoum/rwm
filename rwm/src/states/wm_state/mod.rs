@@ -152,7 +152,6 @@ impl<'a> WMState<'a> {
             Event::ButtonRelease(event) => self.on_button_release(event)?,
             Event::MotionNotify(event) => self.on_motion_notify(event)?,
             Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
-            Event::FocusIn(event) => self.on_focus_in(event)?,
             Event::EnterNotify(event) => self.on_enter_notify(event)?,
             _ => {}
         }
