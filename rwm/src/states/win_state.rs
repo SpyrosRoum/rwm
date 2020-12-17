@@ -8,10 +8,10 @@ use common::TagID;
 #[derive(Debug, PartialEq)]
 pub struct WinState {
     pub(crate) id: Window,
-    x: i16,
-    y: i16,
-    width: u16,
-    height: u16,
+    pub(crate) x: i16,
+    pub(crate) y: i16,
+    pub(crate) width: u16,
+    pub(crate) height: u16,
     /// The tags that this window is on
     pub(crate) tags: HashSet<TagID>,
     /// If true then ignoring when tilling windows

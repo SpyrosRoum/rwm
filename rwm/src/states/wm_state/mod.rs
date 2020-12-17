@@ -29,7 +29,9 @@ pub struct WMState<'a> {
     pub(crate) windows: FocusHist,
     /// If this is Some, we are currently dragging the given window with the given offset relative
     /// to the mouse.
-    pub(crate) selected_window: Option<(Window, (i16, i16))>,
+    pub(crate) dragging_window: Option<(Window, (i16, i16))>,
+    /// Same as `dragging_window` but for resizing.
+    pub(crate) resizing_window: Option<(Window, (i16, i16))>,
     /// The tags that are currently visible
     pub(crate) tags: Vec<TagState>,
     pub(crate) layout: LayoutType,
@@ -49,7 +51,8 @@ impl<'a> WMState<'a> {
             screen_num,
             running: true,
             windows: FocusHist::new(),
-            selected_window: None,
+            dragging_window: None,
+            resizing_window: None,
             tags,
             layout: def_layout,
         }
