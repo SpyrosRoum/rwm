@@ -226,6 +226,11 @@ impl<'a> WMState<'a> {
             // Give keyboard input to window
             self.conn
                 .set_input_focus(InputFocus::None, focused.id, x11rb::CURRENT_TIME)?;
+        } else {
+            // Give input focus to root window, otherwise no input is possible
+            let root = self.conn.setup().roots[self.screen_num].root;
+            self.conn
+                .set_input_focus(InputFocus::None, root, x11rb::CURRENT_TIME)?;
         }
 
         let visible_tags = self
