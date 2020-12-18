@@ -6,7 +6,7 @@ use crate::{
     states::{TagState, WinState},
     utils,
 };
-use common::TagID;
+use common::{Direction, TagID};
 
 /// A wrapper around a VecDequeue.
 /// Currently there is no way to keep a history when switching tags so
@@ -165,14 +165,12 @@ impl FocusHist {
             .map(|(i, _)| i)
     }
 
-    /// Give focus to the next window with the correct tags
-    pub(crate) fn focus_next(&mut self, tags: &[TagState]) {
-        self.cur = self.find_next(tags);
-    }
-
-    /// Give focus to the previous window with the correct tags
-    pub(crate) fn focus_prev(&mut self, tags: &[TagState]) {
-        self.cur = self.find_prev(tags);
+    /// Give focus to the next/previous window with the correct tags
+    pub(crate) fn focus(&mut self, dir: Direction, tags: &[TagState]) {
+        match dir {
+            Direction::Up => self.cur = self.find_prev(tags),
+            Direction::Down => self.cur = self.find_next(tags),
+        };
     }
 
     ///  Search for the window with the given id and set it as focused

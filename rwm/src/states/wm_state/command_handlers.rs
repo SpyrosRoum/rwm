@@ -49,7 +49,7 @@ impl<'a> WMState<'a> {
         match sub {
             WindowSubcommand::Destroy => {
                 self.conn.destroy_window(focused_window.id)?;
-                self.windows.focus_next(&self.tags);
+                self.windows.focus(Direction::Down, &self.tags);
                 self.update_windows()?;
             }
             WindowSubcommand::Send { tag_id } => {
@@ -63,7 +63,7 @@ impl<'a> WMState<'a> {
                     focused_window.tags.clear();
                     focused_window.tags.insert(tag);
                 }
-                self.windows.focus_next(&self.tags);
+                self.windows.focus(Direction::Down, &self.tags);
                 self.update_windows()?;
             }
             WindowSubcommand::Focus(dir) => {
@@ -86,10 +86,7 @@ impl<'a> WMState<'a> {
     }
 
     fn on_window_focus(&mut self, direction: Direction) -> Result<(), Box<dyn Error>> {
-        match direction {
-            Direction::Up => self.windows.focus_prev(&self.tags),
-            Direction::Down => self.windows.focus_next(&self.tags),
-        }
+        self.windows.focus(direction, &self.tags);
         if let Some(win) = self.windows.get_focused() {
             self.conn.configure_window(
                 win.id,
