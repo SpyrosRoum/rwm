@@ -19,7 +19,7 @@ impl<'a> WMState<'a> {
                     tag_state.visible = !tag_state.visible;
                 }
 
-                self.windows.find_focus(&self.tags);
+                self.windows.reset_focus(&self.tags);
             }
             TagSubcommand::Switch { tag_id } => {
                 for tag_state in self.tags.iter_mut() {
@@ -31,7 +31,7 @@ impl<'a> WMState<'a> {
                     }
                 }
 
-                self.windows.find_focus(&self.tags);
+                self.windows.reset_focus(&self.tags);
             }
         };
 

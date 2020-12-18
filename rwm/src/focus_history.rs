@@ -122,7 +122,7 @@ impl FocusHist {
     }
 
     /// Find the first visible window in the tags and set it as focused
-    pub(crate) fn find_focus(&mut self, tags: &[TagState]) -> Option<usize> {
+    pub(crate) fn reset_focus(&mut self, tags: &[TagState]) -> Option<usize> {
         self.cur = self
             .windows
             .iter()
