@@ -130,7 +130,7 @@ impl FocusHist {
         self.cur
     }
 
-    /// Find the next (as in above) visible window
+    /// Find the next (as in Direction::Down) visible window
     fn find_next(&self, tags: &[TagState]) -> Option<usize> {
         if let Some(cur) = self.cur {
             let next = self
@@ -153,7 +153,7 @@ impl FocusHist {
         }
     }
 
-    /// Find the previous (as in under) visible window
+    /// Find the previous (as in Direction::Up) visible window
     fn find_prev(&self, tags: &[TagState]) -> Option<usize> {
         let take_rev = |n: usize| self.windows.iter().enumerate().take(n).rev();
         let take_all_rev = || take_rev(self.windows.len());
