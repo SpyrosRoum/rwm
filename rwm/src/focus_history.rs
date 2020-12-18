@@ -1,11 +1,11 @@
-use std::{
-    cmp::Ordering,
-    collections::{vec_deque, VecDeque},
-};
+use std::{cmp::Ordering, collections::VecDeque};
 
 use x11rb::protocol::xproto::Window;
 
-use crate::states::{TagState, WinState};
+use crate::{
+    states::{TagState, WinState},
+    utils,
+};
 use common::TagID;
 
 /// A wrapper around a VecDequeue.
@@ -26,10 +26,12 @@ impl FocusHist {
         }
     }
 
-    pub(crate) fn iter(&self) -> vec_deque::Iter<'_, WinState> {
+    /// An iterator containing all the windows
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &WinState> {
         self.windows.iter()
     }
 
+    /// An iterator containing only the windows on the given tags
     pub(crate) fn iter_on_tags(&self, tags: Vec<TagID>) -> impl Iterator<Item = &WinState> {
         self.windows
             .iter()
@@ -75,17 +77,18 @@ impl FocusHist {
             Ordering::Greater => { /* We don't need to do anything here */ }
             Ordering::Equal => {
                 // Basically what we do in self.focus_next()
-                let next = self.windows.iter().skip(cur).position(|win| {
-                    tags.iter()
-                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-                });
+                let next = self
+                    .windows
+                    .iter()
+                    .skip(cur)
+                    .position(|win| utils::is_visible(win, tags));
 
                 self.cur = match next {
                     Some(v) => Some(v + cur),
-                    None => self.windows.iter().position(|win| {
-                        tags.iter()
-                            .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-                    }),
+                    None => self
+                        .windows
+                        .iter()
+                        .position(|win| utils::is_visible(win, tags)),
                 };
             }
         }
@@ -109,8 +112,7 @@ impl FocusHist {
 
     /// Get a reference to the focused window
     pub(crate) fn get_focused(&self) -> Option<&WinState> {
-        let index = self.cur?;
-        Some(&self.windows[index])
+        self.cur.map(|cur| &self.windows[cur])
     }
 
     /// Get a mutable reference to the focused window
@@ -119,81 +121,61 @@ impl FocusHist {
         Some(&mut self.windows[index])
     }
 
-    /// Find the first window in the tags and set it as focused
+    /// Find the first visible window in the tags and set it as focused
     pub(crate) fn find_focus(&mut self, tags: &[TagState]) -> Option<usize> {
-        self.cur = self.windows.iter().position(|win| {
-            tags.iter()
-                .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-        });
+        self.cur = self
+            .windows
+            .iter()
+            .position(|win| utils::is_visible(win, tags));
         self.cur
+    }
+
+    /// Find the next (as in above) visible window
+    fn find_next(&self, tags: &[TagState]) -> Option<usize> {
+        if let Some(cur) = self.cur {
+            let next = self
+                .windows
+                .iter()
+                .skip(cur + 1)
+                .position(|win| utils::is_visible(win, tags));
+
+            match next {
+                Some(n) => Some(n + cur + 1),
+                None => self
+                    .windows
+                    .iter()
+                    .position(|win| utils::is_visible(win, tags)),
+            }
+        } else {
+            self.windows
+                .iter()
+                .position(|win| utils::is_visible(win, tags))
+        }
+    }
+
+    /// Find the previous (as in under) visible window
+    fn find_prev(&self, tags: &[TagState]) -> Option<usize> {
+        let take_rev = |n: usize| self.windows.iter().enumerate().take(n).rev();
+        let take_all_rev = || take_rev(self.windows.len());
+
+        self.cur
+            .map_or_else(take_all_rev, take_rev)
+            .find(|(_, win)| utils::is_visible(win, tags))
+            .or_else(|| take_all_rev().find(|(_, win)| utils::is_visible(win, tags)))
+            .map(|(i, _)| i)
     }
 
     /// Give focus to the next window with the correct tags
     pub(crate) fn focus_next(&mut self, tags: &[TagState]) {
-        if let Some(index) = self.cur {
-            let next = self.windows.iter().skip(index + 1).position(|win| {
-                tags.iter()
-                    .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-            });
-
-            self.cur = match next {
-                Some(v) => Some(v + index + 1),
-                None => self.windows.iter().position(|win| {
-                    tags.iter()
-                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-                }),
-            };
-        } else {
-            self.cur = self.windows.iter().position(|win| {
-                tags.iter()
-                    .any(|&tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-            });
-        }
+        self.cur = self.find_next(tags);
     }
 
     /// Give focus to the previous window with the correct tags
     pub(crate) fn focus_prev(&mut self, tags: &[TagState]) {
-        if let Some(index) = self.cur {
-            let prev = self
-                .windows
-                .iter()
-                .enumerate()
-                .take(index)
-                .rev()
-                .find(|(_, win)| {
-                    tags.iter()
-                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-                })
-                .map(|(i, _)| i);
-
-            self.cur = match prev {
-                Some(v) => Some(v),
-                None => self
-                    .windows
-                    .iter()
-                    .enumerate()
-                    .rev()
-                    .find(|(_, win)| {
-                        tags.iter()
-                            .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-                    })
-                    .map(|(i, _)| i),
-            };
-        } else {
-            // If there is nothing focused just focus the last one
-            self.cur = self
-                .windows
-                .iter()
-                .enumerate()
-                .rev()
-                .find(|(_, win)| {
-                    tags.iter()
-                        .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-                })
-                .map(|(i, _)| i);
-        }
+        self.cur = self.find_prev(tags);
     }
 
+    ///  Search for the window with the given id and set it as focused
     pub(crate) fn set_focused(&mut self, id: Window) {
         if let Some((i, _)) = self.find_by_id(id) {
             self.cur = Some(i);
