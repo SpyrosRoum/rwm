@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use x11rb::protocol::xproto::{ConfigureWindowAux, ConnectionExt, StackMode};
+use x11rb::protocol::xproto::ConnectionExt;
 
 use crate::{utils::visible, WMState};
 use common::{Direction, TagSubcommand, WindowSubcommand, WindowToggle};
@@ -50,7 +50,6 @@ impl<'a> WMState<'a> {
             WindowSubcommand::Destroy => {
                 self.conn.destroy_window(focused_window.id)?;
                 self.windows.focus(Direction::Down, &self.tags);
-                self.update_windows()?;
             }
             WindowSubcommand::Send { tag_id } => {
                 // We want a mutable window state so we get it again as mut
@@ -64,35 +63,18 @@ impl<'a> WMState<'a> {
                     focused_window.tags.insert(tag);
                 }
                 self.windows.focus(Direction::Down, &self.tags);
-                self.update_windows()?;
             }
-            WindowSubcommand::Focus(dir) => {
-                self.on_window_focus(dir)?;
-            }
-            WindowSubcommand::Toggle(option) => {
-                match option {
-                    WindowToggle::Float => {
-                        if let Some(focused_window) = self.windows.get_focused_mut() {
-                            focused_window.floating = !focused_window.floating;
-                        }
+            WindowSubcommand::Focus(dir) => self.windows.focus(dir, &self.tags),
+            WindowSubcommand::Toggle(option) => match option {
+                WindowToggle::Float => {
+                    if let Some(focused_window) = self.windows.get_focused_mut() {
+                        focused_window.floating = !focused_window.floating;
                     }
                 }
-                self.update_windows()?;
-            }
+            },
         };
 
         self.update_windows()?;
-        Ok(())
-    }
-
-    fn on_window_focus(&mut self, direction: Direction) -> Result<(), Box<dyn Error>> {
-        self.windows.focus(direction, &self.tags);
-        if let Some(win) = self.windows.get_focused() {
-            self.conn.configure_window(
-                win.id,
-                &ConfigureWindowAux::new().stack_mode(StackMode::Above),
-            )?;
-        }
         Ok(())
     }
 }
