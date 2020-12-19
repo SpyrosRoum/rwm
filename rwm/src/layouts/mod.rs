@@ -24,13 +24,11 @@ impl LayoutType {
     ) -> Result<(), ReplyOrIdError> {
         match self {
             LayoutType::MonadTall => {
-                monad_tall::update(conn, focus, tags, screen_num, border_width)?
+                monad_tall::update(conn, focus, tags, screen_num, border_width)
             }
-            LayoutType::Floating => {} // We don't have anything to do
-            LayoutType::Grid => grid::update(conn, focus, tags, screen_num, border_width)?,
-        };
-
-        Ok(())
+            LayoutType::Floating => Ok(()), // We don't have anything to do
+            LayoutType::Grid => grid::update(conn, focus, tags, screen_num, border_width),
+        }
     }
 
     /// Find the next layout in the list

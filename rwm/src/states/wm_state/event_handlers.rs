@@ -116,7 +116,6 @@ impl<'a> WMState<'a> {
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
         self.windows.set_focused(event.event);
-        self.update_windows()?;
-        Ok(())
+        self.update_windows()
     }
 }

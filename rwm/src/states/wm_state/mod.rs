@@ -133,8 +133,7 @@ impl<'a> WMState<'a> {
         self.windows
             .push_front(WinState::new(window, &geom, self.tags.as_slice()));
 
-        self.update_windows()?;
-        Ok(())
+        self.update_windows()
     }
 
     /// Called when a window gets destroyed (DestroyNotify)
@@ -150,16 +149,14 @@ impl<'a> WMState<'a> {
     /// Handle events from the X server
     pub fn handle_event(&mut self, event: Event) -> Result<(), ReplyOrIdError> {
         match event {
-            Event::MapRequest(event) => self.manage_window(event.window)?,
-            Event::ButtonPress(event) => self.on_button_press(event)?,
-            Event::ButtonRelease(event) => self.on_button_release(event)?,
-            Event::MotionNotify(event) => self.on_motion_notify(event)?,
-            Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
-            Event::EnterNotify(event) => self.on_enter_notify(event)?,
-            _ => {}
+            Event::MapRequest(event) => self.manage_window(event.window),
+            Event::ButtonPress(event) => self.on_button_press(event),
+            Event::ButtonRelease(event) => self.on_button_release(event),
+            Event::MotionNotify(event) => self.on_motion_notify(event),
+            Event::DestroyNotify(event) => self.unmanage_window(event.window),
+            Event::EnterNotify(event) => self.on_enter_notify(event),
+            _ => Ok(()),
         }
-
-        Ok(())
     }
 
     /// Handle a client from the socket
@@ -174,9 +171,8 @@ impl<'a> WMState<'a> {
         let mut cmd = String::with_capacity(cmd_len);
         handle.read_to_string(&mut cmd)?;
         let cmd: Command = serde_json::from_str(&cmd)?;
-        self.handle_command(cmd)?;
 
-        Ok(())
+        self.handle_command(cmd)
     }
 
     /// Handle the command from a client
