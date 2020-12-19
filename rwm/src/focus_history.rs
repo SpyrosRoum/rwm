@@ -176,6 +176,18 @@ impl FocusHist {
         };
     }
 
+    /// Move the current window up or down, focus doesn't follow
+    pub(crate) fn shift(&mut self, dir: Direction, tags: &[TagState]) {
+        if let Some(cur) = self.cur {
+            let next_pos = match dir {
+                Direction::Up => self.find_prev(tags),
+                Direction::Down => self.find_next(tags),
+            }
+            .unwrap(); // There is at least one window so we can unwrap safely
+            self.windows.swap(cur, next_pos);
+        }
+    }
+
     ///  Search for the window with the given id and set it as focused
     pub(crate) fn set_focused(&mut self, id: Window) {
         if let Some((i, _)) = self.find_by_id(id) {

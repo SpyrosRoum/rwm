@@ -1,6 +1,7 @@
 use x11rb::{errors::ReplyOrIdError, protocol::xproto::*};
 
 use crate::{utils::clean_mask, WMState};
+use x11rb::connection::Connection;
 
 impl<'a> WMState<'a> {
     pub(crate) fn on_button_press(
@@ -115,6 +116,8 @@ impl<'a> WMState<'a> {
         &mut self,
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
+        // FixMe: This gets triggered when a command to move a window is issued,
+        // as a result focus doesn't follow the window that moved
         if self.config.follow_cursor {
             self.windows.set_focused(event.event);
             self.update_windows()?;

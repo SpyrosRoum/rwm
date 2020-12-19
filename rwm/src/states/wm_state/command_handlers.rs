@@ -65,6 +65,12 @@ impl<'a> WMState<'a> {
                 self.windows.focus(Direction::Down, &self.tags);
             }
             WindowSubcommand::Focus(dir) => self.windows.focus(dir, &self.tags),
+            WindowSubcommand::Shift(dir) => {
+                if let Some(id) = self.windows.get_focused().map(|win| win.id) {
+                    self.windows.shift(dir, &self.tags);
+                    self.windows.set_focused(id)
+                }
+            }
             WindowSubcommand::Toggle(option) => match option {
                 WindowToggle::Float => {
                     if let Some(focused_window) = self.windows.get_focused_mut() {
