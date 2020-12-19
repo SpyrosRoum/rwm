@@ -95,13 +95,10 @@ impl<'a> WMState<'a> {
 
         // Register the proper events with the window
         let events = ChangeWindowAttributesAux::default().event_mask(
-            EventMask::KeyPress
-                | EventMask::KeyRelease
-                | EventMask::ButtonRelease
-                | EventMask::PointerMotion
-                | EventMask::EnterWindow
+            EventMask::EnterWindow
                 | EventMask::FocusChange
-                | EventMask::EnterWindow,
+                | EventMask::PropertyChange
+                | EventMask::StructureNotify,
         );
         self.conn
             .change_window_attributes(window, &events)?
