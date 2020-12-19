@@ -115,7 +115,10 @@ impl<'a> WMState<'a> {
         &mut self,
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
-        self.windows.set_focused(event.event);
-        self.update_windows()
+        if self.config.follow_cursor {
+            self.windows.set_focused(event.event);
+            self.update_windows()?;
+        }
+        Ok(())
     }
 }

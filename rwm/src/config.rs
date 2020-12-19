@@ -11,6 +11,8 @@ pub struct Config {
     pub(crate) mod_key: ModMask,
     /// First one is the default
     pub(crate) layouts: Vec<LayoutType>,
+    /// If the focus will follow the cursor or not
+    pub(crate) follow_cursor: bool,
 }
 
 impl Default for Config {
@@ -41,6 +43,7 @@ impl Default for Config {
                 LayoutType::Grid,
                 LayoutType::Floating,
             ],
+            follow_cursor: true
         }
     }
 }
