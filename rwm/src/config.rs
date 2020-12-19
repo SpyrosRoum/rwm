@@ -19,8 +19,8 @@ impl Default for Config {
     fn default() -> Self {
         let blue_bytes = [
             255_u8, // Alpha
-            000_u8,   // Red
-            000_u8,   // Green
+            000_u8, // Red
+            000_u8, // Green
             255_u8, // Blue
         ];
         let blue = u32::from_be_bytes(blue_bytes);
@@ -43,7 +43,7 @@ impl Default for Config {
                 LayoutType::Grid,
                 LayoutType::Floating,
             ],
-            follow_cursor: true
+            follow_cursor: true,
         }
     }
 }
