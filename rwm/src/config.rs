@@ -17,19 +17,19 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let blue_bytes: [u8; 4] = [
-            255u8, // Alpha
-            0u8,   // Red
-            0u8,   // Green
-            255u8, // Blue
+        let blue_bytes = [
+            255_u8, // Alpha
+            000_u8,   // Red
+            000_u8,   // Green
+            255_u8, // Blue
         ];
         let blue = u32::from_be_bytes(blue_bytes);
 
-        let gray_bytes: [u8; 4] = [
-            255u8, // Alpha
-            211u8, // Red
-            211u8, // Green
-            211u8, // Blue
+        let gray_bytes = [
+            255_u8, // Alpha
+            211_u8, // Red
+            211_u8, // Green
+            211_u8, // Blue
         ];
         let gray = u32::from_be_bytes(gray_bytes);
 
