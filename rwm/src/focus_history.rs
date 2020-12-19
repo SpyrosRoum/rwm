@@ -32,10 +32,13 @@ impl FocusHist {
     }
 
     /// An iterator containing only the windows on the given tags
-    pub(crate) fn iter_on_tags(&self, tags: Vec<TagID>) -> impl Iterator<Item = &WinState> {
+    pub(crate) fn iter_on_tags_mut(
+        &mut self,
+        tags: Vec<TagID>,
+    ) -> impl Iterator<Item = &mut WinState> {
         self.windows
-            .iter()
-            .filter(move |&win| tags.iter().any(|tag| win.tags.contains(tag)))
+            .iter_mut()
+            .filter(move |win| tags.iter().any(|tag| win.tags.contains(tag)))
     }
 
     /// Adds a WinState to front of the history and gives it focus.

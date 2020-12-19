@@ -10,7 +10,7 @@ use common::TagID;
 
 pub(crate) fn update(
     conn: &RustConnection,
-    focus: &FocusHist,
+    focus: &mut FocusHist,
     tags: Vec<TagID>,
     screen_num: usize,
     border_width: u32,
@@ -24,7 +24,7 @@ pub(crate) fn update(
     let master_width = width * 60 / 100;
     let slave_width = width - master_width;
 
-    let mut windows = focus.iter_on_tags(tags).filter(|win| !win.floating);
+    let mut windows = focus.iter_on_tags_mut(tags).filter(|win| !win.floating);
 
     let master_win = windows.next();
     if master_win.is_none() {
@@ -32,7 +32,7 @@ pub(crate) fn update(
         return Ok(());
     }
     let master_win = master_win.unwrap();
-    let stack = windows.collect::<Vec<_>>();
+    let mut stack = windows.collect::<Vec<_>>();
 
     let master_config = {
         if stack.is_empty() {
@@ -50,11 +50,15 @@ pub(crate) fn update(
         .y(0)
     };
     conn.configure_window(master_win.id, &master_config)?;
+    master_win.x = 0;
+    master_win.y = 0;
+    master_win.width = (master_width - (border_width * 2)) as u16;
+    master_win.height = (height - (border_width * 2)) as u16;
 
     if let Some(slave_height) = height.checked_div(stack.len() as u32) {
         // If we get here it means there are slave windows
         let x = master_width as i32;
-        for (i, win) in stack.iter().enumerate() {
+        for (i, win) in stack.iter_mut().enumerate() {
             let y = (slave_height * i as u32) as i32;
             conn.configure_window(
                 win.id,
@@ -65,6 +69,10 @@ pub(crate) fn update(
                     .height(slave_height - (border_width * 2))
                     .border_width(border_width),
             )?;
+            win.x = x as i16;
+            win.y = y as i16;
+            win.width = (slave_width - (border_width * 2)) as u16;
+            win.height = (slave_height - (border_width * 2)) as u16;
         }
     }
     conn.flush()?;

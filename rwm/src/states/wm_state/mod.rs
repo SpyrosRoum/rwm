@@ -239,7 +239,7 @@ impl<'a> WMState<'a> {
             .collect::<Vec<_>>();
         self.layout.update(
             &self.conn,
-            &self.windows,
+            &mut self.windows,
             visible_tags,
             self.screen_num,
             self.config.border_width,

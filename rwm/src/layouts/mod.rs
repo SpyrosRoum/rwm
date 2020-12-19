@@ -17,7 +17,7 @@ impl LayoutType {
     pub(crate) fn update(
         &self,
         conn: &RustConnection,
-        focus: &FocusHist,
+        focus: &mut FocusHist,
         tags: Vec<TagID>,
         screen_num: usize,
         border_width: u32,
