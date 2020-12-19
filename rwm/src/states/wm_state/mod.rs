@@ -11,11 +11,11 @@ use x11rb::{
 };
 
 use crate::{
-    // command::{Command, LayoutSubcommand},
     config::Config,
     focus_history::FocusHist,
     layouts::LayoutType,
     states::{TagState, WinState},
+    utils,
 };
 use common::{Command, LayoutSubcommand};
 
@@ -205,11 +205,7 @@ impl<'a> WMState<'a> {
 
         // Map the proper windows and unmap the rest
         for win in self.windows.iter() {
-            if self
-                .tags
-                .iter()
-                .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
-            {
+            if utils::is_visible(win, &self.tags) {
                 let attrs = ChangeWindowAttributesAux::default()
                     .border_pixel(self.config.normal_border_color);
                 self.conn.change_window_attributes(win.id, &attrs)?;
