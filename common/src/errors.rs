@@ -60,3 +60,16 @@ impl fmt::Display for DirectionValueError {
 }
 
 impl Error for DirectionValueError {}
+
+#[derive(Debug)]
+pub struct ParseModMaskError {
+    pub mask: String,
+}
+
+impl fmt::Display for ParseModMaskError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid mod mask: {}", self.mask)
+    }
+}
+
+impl Error for ParseModMaskError {}

@@ -1,14 +1,16 @@
-use x11rb::protocol::xproto::ModMask;
+use std::convert::TryFrom;
 
-use crate::layouts::LayoutType;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+use crate::{layouts::LayoutType, mod_mask::XModMask};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub(crate) border_width: u32,
     /// ARGB format
     pub(crate) focused_border_color: u32,
     pub(crate) normal_border_color: u32,
-    pub(crate) mod_key: ModMask,
+    pub(crate) mod_key: XModMask,
     /// First one is the default
     pub(crate) layouts: Vec<LayoutType>,
     /// If the focus will follow the cursor or not
@@ -33,11 +35,13 @@ impl Default for Config {
         ];
         let gray = u32::from_be_bytes(gray_bytes);
 
+        let mod_key = XModMask::try_from(String::from("mod1")).unwrap(); // left alt
+
         Self {
             border_width: 4, // pixels
             focused_border_color: blue,
             normal_border_color: gray,
-            mod_key: ModMask::M1, // left alt
+            mod_key,
             layouts: vec![
                 LayoutType::MonadTall,
                 LayoutType::Grid,
