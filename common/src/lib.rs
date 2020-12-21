@@ -1,10 +1,14 @@
 mod errors;
+mod server_reply;
 mod tag_id;
+
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
 
 pub use errors::*;
+pub use server_reply::Reply;
 pub use tag_id::TagID;
 
 #[derive(Deserialize, Serialize, StructOpt, Debug)]
@@ -20,6 +24,18 @@ pub enum Command {
     Window(WindowSubcommand),
     /// Commands related to layouts
     Layout(LayoutSubcommand),
+    /// Print or load a config
+    Config(ConfigSubcommand),
+}
+
+#[derive(Deserialize, Serialize, StructOpt, Debug)]
+pub enum ConfigSubcommand {
+    /// Print the current configuration
+    Print,
+    Load {
+        /// Path to the configuration file. If left empty it will try to reload the current file.
+        path: Option<PathBuf>,
+    },
 }
 
 #[derive(Deserialize, Serialize, StructOpt, Debug)]

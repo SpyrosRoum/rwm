@@ -9,3 +9,4 @@ edition = "2018"
 structopt = "0.3"
 serde = { version = "1", features=["derive"] }
 derive_more = "0.99"
+toml = "0.5"

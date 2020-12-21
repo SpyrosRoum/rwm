@@ -17,7 +17,7 @@ use crate::{
     states::{TagState, WinState},
     utils,
 };
-use common::{Command, LayoutSubcommand};
+use common::{Command, ConfigSubcommand, LayoutSubcommand};
 
 #[derive(Debug)]
 pub struct WMState<'a> {
@@ -186,6 +186,13 @@ impl<'a> WMState<'a> {
                     LayoutSubcommand::Prev => self.layout.prev(&self.config.layouts),
                 };
                 self.update_windows()?
+            }
+            Command::Config(ConfigSubcommand::Print) => {
+                println!("{}", toml::to_string_pretty(&self.config).unwrap());
+            }
+            Command::Config(ConfigSubcommand::Load { path }) => {
+                self.config.load(path)?;
+                self.update_windows()?;
             }
         }
 

@@ -1,8 +1,9 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom, fs, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{layouts::LayoutType, mod_mask::XModMask};
+use common::LoadConfigError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -15,6 +16,10 @@ pub struct Config {
     pub(crate) layouts: Vec<LayoutType>,
     /// If the focus will follow the cursor or not
     pub(crate) follow_cursor: bool,
+    /// The path to the currently loaded config file.
+    /// None if there is no config loaded
+    #[serde(skip)]
+    pub(crate) path: Option<PathBuf>,
 }
 
 impl Default for Config {
@@ -48,6 +53,23 @@ impl Default for Config {
                 LayoutType::Floating,
             ],
             follow_cursor: true,
+            path: None,
         }
+    }
+}
+
+impl Config {
+    pub(crate) fn load(&mut self, path: Option<PathBuf>) -> Result<(), LoadConfigError> {
+        if path.is_none() && self.path.is_none() {
+            return Err(LoadConfigError::new("No configuration file found"));
+        }
+        let path = path.unwrap_or_else(|| self.path.clone().unwrap());
+
+        let new_config = fs::read_to_string(path.clone())?;
+        let mut new_config: Self = toml::from_str(new_config.as_str())?;
+        new_config.path = Some(path);
+
+        std::mem::swap(self, &mut new_config);
+        Ok(())
     }
 }

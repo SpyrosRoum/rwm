@@ -1,4 +1,4 @@
-use std::{error::Error, fmt, num::ParseIntError};
+use std::{error::Error, fmt, io, num::ParseIntError};
 
 #[derive(Debug)]
 pub struct TagValueError {
@@ -73,3 +73,49 @@ impl fmt::Display for ParseModMaskError {
 }
 
 impl Error for ParseModMaskError {}
+
+#[derive(Debug)]
+pub struct ParseConfigFormatError {
+    pub format: String,
+}
+
+impl fmt::Display for ParseConfigFormatError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid config format: {}", self.format)
+    }
+}
+
+impl Error for ParseConfigFormatError {}
+
+#[derive(Debug)]
+pub struct LoadConfigError {
+    pub error: String,
+}
+
+impl LoadConfigError {
+    pub fn new(msg: impl Into<String>) -> Self {
+        Self { error: msg.into() }
+    }
+}
+
+impl From<toml::de::Error> for LoadConfigError {
+    fn from(e: toml::de::Error) -> Self {
+        Self::new(e.to_string())
+    }
+}
+
+impl fmt::Display for LoadConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Failed to load configuration: {}", self.error)
+    }
+}
+
+impl From<io::Error> for LoadConfigError {
+    fn from(_: io::Error) -> Self {
+        Self {
+            error: "Error parsing the configuration file".to_string(),
+        }
+    }
+}
+
+impl Error for LoadConfigError {}
