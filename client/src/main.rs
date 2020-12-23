@@ -5,12 +5,12 @@ use std::{
     process::exit,
 };
 
-use common::Command;
+use common::{into_message, Command};
 use structopt::StructOpt;
 
 fn main() {
     let opts = Command::from_args();
-    let json = serde_json::to_string(&opts).unwrap();
+    let message = into_message(opts).unwrap();
 
     let socket = Path::new("/tmp/rwm.sock");
     let mut stream = match UnixStream::connect(&socket) {
@@ -21,7 +21,6 @@ fn main() {
         }
     };
 
-    let message = format!("{:0>4}{}", json.len(), json);
     if stream.write(message.as_ref()).is_err() {
         eprintln!("Error sending the command");
         exit(1);

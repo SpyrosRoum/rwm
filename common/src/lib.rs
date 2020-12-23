@@ -11,6 +11,12 @@ pub use errors::*;
 pub use server_reply::Reply;
 pub use tag_id::TagID;
 
+/// A function that serialises a message and produces a string that can be directly sent to the wm or the client
+pub fn into_message<T: Serialize>(msg: T) -> serde_json::Result<String> {
+    let json = serde_json::to_string(&msg)?;
+    Ok(format!("{:0>4}{}", json.len(), json))
+}
+
 #[derive(Deserialize, Serialize, StructOpt, Debug)]
 pub enum Direction {
     Up,
