@@ -20,48 +20,6 @@ impl From<ParseIntError> for TagValueError {
 impl Error for TagValueError {}
 
 #[derive(Debug)]
-pub struct ToCommandError {
-    pub text: String,
-}
-
-impl fmt::Display for ToCommandError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid command: {}", self.text)
-    }
-}
-
-impl From<TagValueError> for ToCommandError {
-    fn from(e: TagValueError) -> Self {
-        Self {
-            text: format!("Invalid tag number: {}", e.tag_num),
-        }
-    }
-}
-
-impl From<DirectionValueError> for ToCommandError {
-    fn from(e: DirectionValueError) -> Self {
-        Self {
-            text: format!("Invalid direction: {}", e.msg),
-        }
-    }
-}
-
-impl Error for ToCommandError {}
-
-#[derive(Debug)]
-pub struct DirectionValueError {
-    pub msg: String,
-}
-
-impl fmt::Display for DirectionValueError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Directions can be \"up\" and \"down\": {}", self.msg)
-    }
-}
-
-impl Error for DirectionValueError {}
-
-#[derive(Debug)]
 pub struct ParseModMaskError {
     pub mask: String,
 }
@@ -73,19 +31,6 @@ impl fmt::Display for ParseModMaskError {
 }
 
 impl Error for ParseModMaskError {}
-
-#[derive(Debug)]
-pub struct ParseConfigFormatError {
-    pub format: String,
-}
-
-impl fmt::Display for ParseConfigFormatError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid config format: {}", self.format)
-    }
-}
-
-impl Error for ParseConfigFormatError {}
 
 #[derive(Debug)]
 pub struct LoadConfigError {

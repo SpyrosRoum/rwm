@@ -1,6 +1,5 @@
 mod command;
 mod errors;
-mod server_reply;
 mod tag_id;
 
 use serde::{Deserialize, Serialize};
@@ -8,7 +7,6 @@ use structopt::StructOpt;
 
 pub use command::*;
 pub use errors::*;
-pub use server_reply::Reply;
 pub use tag_id::TagID;
 
 /// A function that serialises a message and produces a string that can be directly sent to the wm or the client
