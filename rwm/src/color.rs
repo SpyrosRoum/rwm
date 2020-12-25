@@ -1,5 +1,5 @@
-//! A struct that allows good (de)serialisation for colors.
-//! Internally they need to be displayed in ARGB format
+//! A struct that allows good and more correct (de)serialisation for colors.
+//! Internally they need to be displayed in ARGB format but we want to parse and show them in hex
 
 use std::{
     convert::TryFrom,
@@ -42,8 +42,8 @@ impl Color {
 impl FromStr for Color {
     type Err = ParseColorError;
 
-    /// Assume Hex
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // We assume that we are parsing hex. If it's not valid we error
         let s = s
             .trim_start_matches(|c: char| !c.is_ascii_hexdigit())
             .trim_end();
