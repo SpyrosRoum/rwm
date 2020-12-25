@@ -33,6 +33,27 @@ impl fmt::Display for ParseModMaskError {
 impl Error for ParseModMaskError {}
 
 #[derive(Debug)]
+pub struct ParseColorError {
+    pub color: String,
+}
+
+impl fmt::Display for ParseColorError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid color: {}", self.color)
+    }
+}
+
+impl From<ParseIntError> for ParseColorError {
+    fn from(e: ParseIntError) -> Self {
+        Self {
+            color: e.to_string(),
+        }
+    }
+}
+
+impl Error for ParseColorError {}
+
+#[derive(Debug)]
 pub struct LoadConfigError {
     pub error: String,
 }

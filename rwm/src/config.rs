@@ -2,15 +2,14 @@ use std::{convert::TryFrom, fs, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{layouts::LayoutType, mod_mask::XModMask};
+use crate::{color::Color, layouts::LayoutType, mod_mask::XModMask};
 use common::LoadConfigError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub(crate) border_width: u32,
-    /// ARGB format
-    pub(crate) focused_border_color: u32,
-    pub(crate) normal_border_color: u32,
+    pub(crate) focused_border_color: Color,
+    pub(crate) normal_border_color: Color,
     pub(crate) mod_key: XModMask,
     /// First one is the default
     pub(crate) layouts: Vec<LayoutType>,
@@ -24,21 +23,8 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let blue_bytes = [
-            255_u8, // Alpha
-            000_u8, // Red
-            000_u8, // Green
-            255_u8, // Blue
-        ];
-        let blue = u32::from_be_bytes(blue_bytes);
-
-        let gray_bytes = [
-            255_u8, // Alpha
-            211_u8, // Red
-            211_u8, // Green
-            211_u8, // Blue
-        ];
-        let gray = u32::from_be_bytes(gray_bytes);
+        let blue = Color::blue();
+        let gray = Color::new(211, 211, 211);
 
         let mod_key = XModMask::try_from(String::from("mod1")).unwrap(); // left alt
 

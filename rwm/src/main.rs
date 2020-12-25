@@ -1,3 +1,4 @@
+mod color;
 mod config;
 mod focus_history;
 mod layouts;
