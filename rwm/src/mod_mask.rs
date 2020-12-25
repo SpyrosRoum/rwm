@@ -61,9 +61,8 @@ impl From<XModMask> for String {
 }
 
 impl Display for XModMask {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let v = String::try_from(*self).unwrap();
-        write!(f, "{}", v)
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", String::from(*self))
     }
 }
 
