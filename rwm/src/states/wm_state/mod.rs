@@ -1,7 +1,7 @@
 mod command_handlers;
 mod event_handlers;
 
-use std::{io::Read, os::unix::net::UnixStream};
+use std::os::unix::net::UnixStream;
 
 use anyhow::Context;
 use x11rb::{
@@ -159,24 +159,10 @@ impl<'a> WMState<'a> {
 
     /// Handle a client from the socket
     pub fn handle_client(&mut self, stream: &mut UnixStream) -> anyhow::Result<String> {
-        // First for bytes we read should be the length of the command that follows
-        let mut cmd_len = [0; 4];
-        stream
-            .read_exact(&mut cmd_len)
-            .context("Invalid command length")?;
-        // If it can't be parsed to a number we simply don't care about it
-        let cmd_len = String::from_utf8(cmd_len.to_vec())
-            .context("Invalid characters")?
-            .parse::<usize>()
-            .context("Expected length of command")?;
-
-        let mut handle = stream.take(cmd_len as u64);
-        let mut cmd = String::with_capacity(cmd_len);
-        handle.read_to_string(&mut cmd).context("Unable to read")?;
+        let cmd = common::read_message(stream)?;
         let cmd: Command = serde_json::from_str(&cmd).context("Invalid command")?;
 
-        let r = self.handle_command(cmd)?;
-        Ok(r)
+        Ok(self.handle_command(cmd)?)
     }
 
     /// Handle the command from a client
