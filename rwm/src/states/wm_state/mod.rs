@@ -125,7 +125,7 @@ impl<'a> WMState<'a> {
         self.conn.map_window(window)?;
 
         let geom = self.conn.get_geometry(window)?.reply()?;
-        // self.tags.clone() because the new window will be in the currently viewable tags
+        // We give a reference to the tags so the window can deduce what tags are currently visible.
         // We also push at the front of the focus history because the window now has focus
         self.windows
             .push_front(WinState::new(window, &geom, self.tags.as_slice()));
