@@ -1,12 +1,11 @@
-use std::error::Error;
-
 use x11rb::protocol::xproto::ConnectionExt;
 
 use crate::{utils::visible, WMState};
+use anyhow::{Context, Result};
 use common::{Direction, TagSubcommand, WindowSubcommand, WindowToggle};
 
 impl<'a> WMState<'a> {
-    pub(crate) fn on_tag_cmd(&mut self, sub: TagSubcommand) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn on_tag_cmd(&mut self, sub: TagSubcommand) -> Result<()> {
         match sub {
             TagSubcommand::Toggle { tag_id } => {
                 let one_vis = visible(&self.tags).len() == 1;
@@ -35,11 +34,11 @@ impl<'a> WMState<'a> {
             }
         };
 
-        self.update_windows()?;
-        Ok(())
+        self.update_windows()
+            .with_context(|| format!("Failed to update windows after `Tag({:?})`", sub))
     }
 
-    pub(crate) fn on_window_cmd(&mut self, sub: WindowSubcommand) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn on_window_cmd(&mut self, sub: WindowSubcommand) -> Result<()> {
         let focused_window = self.windows.get_focused();
         if focused_window.is_none() {
             // there are no windows so just do nothing
@@ -48,7 +47,9 @@ impl<'a> WMState<'a> {
         let focused_window = focused_window.unwrap();
         match sub {
             WindowSubcommand::Destroy => {
-                self.conn.destroy_window(focused_window.id)?;
+                self.conn
+                    .destroy_window(focused_window.id)
+                    .context("Failed to destroy the current window")?;
                 self.windows.focus(Direction::Down, &self.tags);
             }
             WindowSubcommand::Send { tag_id } => {
@@ -80,7 +81,7 @@ impl<'a> WMState<'a> {
             },
         };
 
-        self.update_windows()?;
-        Ok(())
+        self.update_windows()
+            .with_context(|| format!("Failed to update windows after `Window({:?})`", sub))
     }
 }

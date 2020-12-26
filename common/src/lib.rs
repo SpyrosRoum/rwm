@@ -15,7 +15,7 @@ pub fn into_message<T: Serialize>(msg: T) -> serde_json::Result<String> {
     Ok(format!("{:0>4}{}", json.len(), json))
 }
 
-#[derive(Deserialize, Serialize, StructOpt, Debug)]
+#[derive(Deserialize, Serialize, StructOpt, Debug, Copy, Clone)]
 pub enum Direction {
     Up,
     Down,

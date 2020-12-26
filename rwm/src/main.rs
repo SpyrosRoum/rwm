@@ -15,6 +15,7 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
+use common::into_message;
 use config::Config;
 use states::WMState;
 
@@ -92,11 +93,11 @@ fn main() {
         }
 
         if let Ok((mut stream, _adr)) = listener.accept() {
-            match wm_state.handle_client(&mut stream) {
-                Ok(_) => stream.write(b"0"),
-                Err(_) => stream.write(b"1"),
-            }
-            .ok(); // .ok() is used to basically just ignore the result
+            let reply = match wm_state.handle_client(&mut stream) {
+                Ok(msg) => into_message(msg).unwrap(),
+                Err(e) => into_message(format!("{:?}", e)).unwrap(),
+            };
+            stream.write(reply.as_ref()).ok(); // .ok() is used to basically just ignore the result
             stream.shutdown(Shutdown::Both).ok();
         };
     }

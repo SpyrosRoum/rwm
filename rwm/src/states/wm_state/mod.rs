@@ -1,8 +1,9 @@
 mod command_handlers;
 mod event_handlers;
 
-use std::{error::Error, io::Read, os::unix::net::UnixStream};
+use std::{io::Read, os::unix::net::UnixStream};
 
+use anyhow::Context;
 use x11rb::{
     connection::Connection,
     errors::ReplyOrIdError,
@@ -157,23 +158,29 @@ impl<'a> WMState<'a> {
     }
 
     /// Handle a client from the socket
-    pub fn handle_client(&mut self, stream: &mut UnixStream) -> Result<(), Box<dyn Error>> {
+    pub fn handle_client(&mut self, stream: &mut UnixStream) -> anyhow::Result<String> {
         // First for bytes we read should be the length of the command that follows
         let mut cmd_len = [0; 4];
-        stream.read_exact(&mut cmd_len)?;
+        stream
+            .read_exact(&mut cmd_len)
+            .context("Invalid command length")?;
         // If it can't be parsed to a number we simply don't care about it
-        let cmd_len = String::from_utf8(cmd_len.to_vec())?.parse::<usize>()?;
+        let cmd_len = String::from_utf8(cmd_len.to_vec())
+            .context("Invalid characters")?
+            .parse::<usize>()
+            .context("Expected length of command")?;
 
         let mut handle = stream.take(cmd_len as u64);
         let mut cmd = String::with_capacity(cmd_len);
-        handle.read_to_string(&mut cmd)?;
-        let cmd: Command = serde_json::from_str(&cmd)?;
+        handle.read_to_string(&mut cmd).context("Unable to read")?;
+        let cmd: Command = serde_json::from_str(&cmd).context("Invalid command")?;
 
-        self.handle_command(cmd)
+        let r = self.handle_command(cmd)?;
+        Ok(r)
     }
 
     /// Handle the command from a client
-    fn handle_command(&mut self, cmd: Command) -> Result<(), Box<dyn Error>> {
+    fn handle_command(&mut self, cmd: Command) -> anyhow::Result<String> {
         match cmd {
             Command::Quit => {
                 self.running = false;
@@ -185,18 +192,21 @@ impl<'a> WMState<'a> {
                     LayoutSubcommand::Next => self.layout.next(&self.config.layouts),
                     LayoutSubcommand::Prev => self.layout.prev(&self.config.layouts),
                 };
-                self.update_windows()?
+                self.update_windows().with_context(|| {
+                    format!("Failed to update windows after `Layout({:?})`", sub)
+                })?
             }
             Command::Config(ConfigSubcommand::Print) => {
-                println!("{}", toml::to_string_pretty(&self.config).unwrap());
+                return Ok(toml::to_string_pretty(&self.config).unwrap());
             }
             Command::Config(ConfigSubcommand::Load { path }) => {
                 self.config.load(path)?;
-                self.update_windows()?;
+                self.update_windows()
+                    .context("Failed to update windows after loading configuration")?;
             }
         }
 
-        Ok(())
+        Ok(String::from("0"))
     }
 
     /// Update the currently visible windows

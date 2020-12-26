@@ -19,7 +19,7 @@ pub enum WindowSubcommand {
     Toggle(WindowToggle),
 }
 
-#[derive(Deserialize, Serialize, StructOpt, Debug)]
+#[derive(Deserialize, Serialize, StructOpt, Debug, Copy, Clone)]
 pub enum WindowToggle {
     /// If the window is floating or not
     Float,
