@@ -31,6 +31,15 @@ impl FocusHist {
         self.windows.iter()
     }
 
+    pub(crate) fn contains<T: Into<Window>>(&self, id: T) -> bool {
+        let id: Window = id.into();
+        self.windows.iter().any(|win_state| win_state.id == id)
+    }
+
+    pub(crate) fn get_mut(&mut self, index: usize) -> Option<&mut WinState> {
+        self.windows.get_mut(index)
+    }
+
     /// An iterator containing only the windows on the given tags
     pub(crate) fn iter_on_tags_mut(
         &mut self,

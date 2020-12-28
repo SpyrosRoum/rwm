@@ -59,6 +59,7 @@ impl<'a> WMState<'a> {
                 self.conn
                     .configure_window(window, &ConfigureWindowAux::new().x(x).y(y))?;
                 if let Some((_, win_state)) = self.windows.find_by_id_mut(window) {
+                    win_state.floating = true;
                     win_state.x = x as i16;
                     win_state.y = y as i16;
                 }
@@ -69,10 +70,11 @@ impl<'a> WMState<'a> {
             if event.event != window {
                 return Ok(());
             } else if let Some((_, win_state)) = self.windows.find_by_id_mut(window) {
+                win_state.floating = true;
                 let (dif_w, dif_h) = ((event.root_x - og_x) as i32, (event.root_y - og_y) as i32);
                 let (new_w, new_h) = (
-                    win_state.width as i32 + dif_w,
-                    win_state.height as i32 + dif_h,
+                    1.max(win_state.width as i32 + dif_w),
+                    1.max(win_state.height as i32 + dif_h),
                 );
                 self.conn.configure_window(
                     window,
@@ -119,6 +121,39 @@ impl<'a> WMState<'a> {
             self.windows.set_focused(event.event);
             self.update_windows()?;
         }
+        Ok(())
+    }
+
+    pub(crate) fn on_property_notify(&mut self, event: PropertyNotifyEvent) -> anyhow::Result<()> {
+        if event.state == Property::Delete {
+            return Ok(());
+        }
+        if let Some((idx, win_state)) = self.windows.find_by_id(event.window) {
+            // Unfortunately I can't use match for event.atom and AtomEnum..
+            if event.atom == Atom::from(AtomEnum::WM_TRANSIENT_FOR) {
+                let id = self
+                    .conn
+                    .get_property(
+                        false,
+                        win_state.id,
+                        AtomEnum::WM_TRANSIENT_FOR,
+                        AtomEnum::WINDOW,
+                        0,
+                        1,
+                    )?
+                    .reply()?
+                    .value32()
+                    .ok_or_else(|| anyhow::Error::msg("Wrong format"))?
+                    .next()
+                    .ok_or_else(|| anyhow::Error::msg("No value in reply"))?;
+                if self.windows.contains(id) {
+                    // We can unwrap because if it didn't exist we wouldn't be here
+                    let win_state = self.windows.get_mut(idx).unwrap();
+                    win_state.floating = true;
+                }
+            }
+        }
+
         Ok(())
     }
 }

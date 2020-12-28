@@ -24,7 +24,8 @@ fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyErro
         EventMask::SubstructureRedirect
             | EventMask::SubstructureNotify
             | EventMask::ButtonPress
-            | EventMask::StructureNotify,
+            | EventMask::StructureNotify
+            | EventMask::PropertyChange,
     );
 
     conn.change_window_attributes(screen.root, &change)?.check()

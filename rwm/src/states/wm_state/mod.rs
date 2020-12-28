@@ -145,16 +145,18 @@ impl<'a> WMState<'a> {
     }
 
     /// Handle events from the X server
-    pub fn handle_event(&mut self, event: Event) -> Result<(), ReplyOrIdError> {
+    pub(crate) fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
         match event {
-            Event::MapRequest(event) => self.manage_window(event.window),
-            Event::ButtonPress(event) => self.on_button_press(event),
-            Event::ButtonRelease(event) => self.on_button_release(event),
-            Event::MotionNotify(event) => self.on_motion_notify(event),
-            Event::DestroyNotify(event) => self.unmanage_window(event.window),
-            Event::EnterNotify(event) => self.on_enter_notify(event),
-            _ => Ok(()),
-        }
+            Event::MapRequest(event) => self.manage_window(event.window)?,
+            Event::ButtonPress(event) => self.on_button_press(event)?,
+            Event::ButtonRelease(event) => self.on_button_release(event)?,
+            Event::MotionNotify(event) => self.on_motion_notify(event)?,
+            Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
+            Event::EnterNotify(event) => self.on_enter_notify(event)?,
+            Event::PropertyNotify(event) => self.on_property_notify(event)?,
+            _ => {}
+        };
+        Ok(())
     }
 
     /// Handle a client from the socket
