@@ -6,8 +6,10 @@ mod mod_mask;
 mod states;
 mod utils;
 
-use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, process::exit};
+use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf, process::exit};
 
+use anyhow::Context;
+use structopt::StructOpt;
 use x11rb::{
     connection::Connection,
     errors::ReplyError,
@@ -18,6 +20,15 @@ use x11rb::{
 use common::into_message;
 use config::Config;
 use states::WMState;
+
+#[derive(StructOpt, Debug)]
+struct Opt {
+    /// Optional path to a config file
+    config: Option<PathBuf>,
+    /// Prints the default configuration in stdout and exits
+    #[structopt(short, long)]
+    print: bool,
+}
 
 fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyError> {
     let change = ChangeWindowAttributesAux::default().event_mask(
@@ -31,7 +42,13 @@ fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyErro
     conn.change_window_attributes(screen.root, &change)?.check()
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
+    let options: Opt = Opt::from_args();
+    if options.print {
+        let config = Config::default();
+        println!("{}", toml::to_string(&config)?);
+        return Ok(());
+    }
     let (conn, screen_num) = RustConnection::connect(None).unwrap();
     let screen = &conn.setup().roots[screen_num];
 
@@ -48,7 +65,13 @@ fn main() {
     };
 
     // We are the window manager!
-    let mut wm_state = WMState::new(&conn, screen_num, Config::default());
+    let mut config = Config::default();
+    if let Some(path) = options.config {
+        config
+            .load(Some(path.clone()))
+            .with_context(|| format!("Failed to load configuration file {:?}", path))?;
+    }
+    let mut wm_state = WMState::new(&conn, screen_num, config);
     wm_state.scan_windows().unwrap();
 
     let listener = UnixListener::bind("/tmp/rwm.sock").expect("Failed connect to socket");
@@ -104,4 +127,5 @@ fn main() {
     }
 
     utils::clean_up().expect("Failed to clean up.");
+    Ok(())
 }
