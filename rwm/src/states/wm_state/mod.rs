@@ -245,6 +245,7 @@ impl<'a> WMState<'a> {
             visible_tags,
             self.screen_num,
             self.config.border_width,
+            self.config.gap,
         )
     }
 }

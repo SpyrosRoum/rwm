@@ -14,9 +14,9 @@ pub(crate) fn update(
     tags: Vec<TagID>,
     screen_num: usize,
     border_width: u32,
+    gap: u32,
 ) -> Result<(), ReplyOrIdError> {
     // First window gets 60% of the screen (the left side), the rest stack on the side
-    // ToDo Gaps.
     // ToDo bar space.
     let width = conn.setup().roots[screen_num].width_in_pixels as u32;
     let height = conn.setup().roots[screen_num].height_in_pixels as u32;
@@ -34,48 +34,62 @@ pub(crate) fn update(
     let master_win = master_win.unwrap();
     let mut stack = windows.collect::<Vec<_>>();
 
-    let master_config = {
+    // We don't want gap if we only have one window
+    let gap = !stack.is_empty() as i32 * gap as i32;
+    // Same for border width
+    let bw = !stack.is_empty() as u32 * border_width;
+    let (mw, master_height) = {
         if stack.is_empty() {
-            ConfigureWindowAux::new()
-                .width(width)
-                .height(height)
-                .border_width(0)
+            (width, height)
         } else {
-            ConfigureWindowAux::new()
-                .width(master_width - (border_width * 2))
-                .height(height - (border_width * 2))
-                .border_width(border_width)
+            (
+                master_width - (border_width * 2) - gap as u32,
+                height - (border_width * 2) - (gap * 2) as u32,
+            )
         }
-        .x(0)
-        .y(0)
     };
+
+    let master_config = ConfigureWindowAux::new()
+        .width(mw)
+        .height(master_height)
+        .x(gap)
+        .y(gap)
+        .border_width(bw);
     conn.configure_window(master_win.id, &master_config)?;
-    master_win.x = 0;
-    master_win.y = 0;
-    master_win.width = (master_width - (border_width * 2)) as u16;
-    master_win.height = (height - (border_width * 2)) as u16;
+    master_win.x = gap as i16;
+    master_win.y = gap as i16;
+    master_win.width = mw as u16;
+    master_win.height = master_height as u16;
 
     if let Some(slave_height) = height.checked_div(stack.len() as u32) {
         // If we get here it means there are slave windows
-        let x = master_width as i32;
+        let x = master_width as i32 + gap * 2; // gap * 2 for both the slave window and the master window
+
         for (i, win) in stack.iter_mut().enumerate() {
-            let y = (slave_height * i as u32) as i32;
+            let y = if i == 0 {
+                gap
+            } else {
+                slave_height as i32 * (i as i32) + gap
+            };
+            let width = slave_width - (border_width * 2) - (gap * 3) as u32;
+            let height = slave_height - (border_width * 2) - (gap * 2) as u32;
+
             conn.configure_window(
                 win.id,
                 &ConfigureWindowAux::new()
                     .x(x)
                     .y(y)
-                    .width(slave_width - (border_width * 2))
-                    .height(slave_height - (border_width * 2))
+                    .width(width)
+                    .height(height)
                     .border_width(border_width),
             )?;
+
             win.x = x as i16;
             win.y = y as i16;
-            win.width = (slave_width - (border_width * 2)) as u16;
-            win.height = (slave_height - (border_width * 2)) as u16;
+            win.width = width as u16;
+            win.height = height as u16;
         }
     }
-    conn.flush()?;
 
     Ok(())
 }

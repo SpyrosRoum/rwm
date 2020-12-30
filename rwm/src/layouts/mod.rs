@@ -6,6 +6,7 @@ use x11rb::{errors::ReplyOrIdError, rust_connection::RustConnection};
 
 use crate::focus_history::FocusHist;
 use common::TagID;
+use x11rb::connection::Connection;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) enum LayoutType {
@@ -22,14 +23,17 @@ impl LayoutType {
         tags: Vec<TagID>,
         screen_num: usize,
         border_width: u32,
+        gap: u32,
     ) -> Result<(), ReplyOrIdError> {
         match self {
             LayoutType::MonadTall => {
-                monad_tall::update(conn, focus, tags, screen_num, border_width)
+                monad_tall::update(conn, focus, tags, screen_num, border_width, gap)
             }
             LayoutType::Floating => Ok(()), // We don't have anything to do
-            LayoutType::Grid => grid::update(conn, focus, tags, screen_num, border_width),
-        }
+            LayoutType::Grid => grid::update(conn, focus, tags, screen_num, border_width, gap),
+        }?;
+        conn.flush()?;
+        Ok(())
     }
 
     /// Find the next layout in the list

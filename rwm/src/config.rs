@@ -15,6 +15,8 @@ pub struct Config {
     pub(crate) layouts: Vec<LayoutType>,
     /// If the focus will follow the cursor or not
     pub(crate) follow_cursor: bool,
+    /// Useless gap between windows
+    pub(crate) gap: u32,
     /// The path to the currently loaded config file.
     /// None if there is no config loaded
     #[serde(skip)]
@@ -39,6 +41,7 @@ impl Default for Config {
                 LayoutType::Floating,
             ],
             follow_cursor: true,
+            gap: 4,
             path: None,
         }
     }
