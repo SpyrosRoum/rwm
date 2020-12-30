@@ -6,9 +6,9 @@ mod mod_mask;
 mod states;
 mod utils;
 
-use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf, process::exit};
+use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf};
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use structopt::StructOpt;
 use x11rb::{
     connection::Connection,
@@ -55,11 +55,9 @@ fn main() -> anyhow::Result<()> {
     if let Err(err) = try_become_wm(&conn, screen) {
         if let ReplyError::X11Error(error) = err {
             if error.error_kind == ErrorKind::Access {
-                eprintln!("Another WM in already running.");
-                exit(1);
+                bail!("Another WM in already running.");
             } else {
-                eprintln!("Error");
-                exit(1);
+                bail!("Something went wrong");
             }
         }
     };
@@ -72,9 +70,9 @@ fn main() -> anyhow::Result<()> {
             .with_context(|| format!("Failed to load configuration file {:?}", path))?;
     }
     let mut wm_state = WMState::new(&conn, screen_num, config);
-    wm_state.scan_windows().unwrap();
+    wm_state.scan_windows().context("Error while looking for pre-existing windows")?;
 
-    let listener = UnixListener::bind("/tmp/rwm.sock").expect("Failed connect to socket");
+    let listener = UnixListener::bind("/tmp/rwm.sock").context("Failed to connect to socket")?;
     listener.set_nonblocking(true).unwrap();
 
     let poller = polling::Poller::new().unwrap();
@@ -113,6 +111,7 @@ fn main() -> anyhow::Result<()> {
                 }
                 last_motion = ev.time;
             }
+            // ToDo Error handling
             wm_state.handle_event(event).unwrap();
         }
 
@@ -126,6 +125,6 @@ fn main() -> anyhow::Result<()> {
         };
     }
 
-    utils::clean_up().expect("Failed to clean up.");
+    utils::clean_up().context("Failed to clean up.")?;
     Ok(())
 }
