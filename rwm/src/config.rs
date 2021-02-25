@@ -21,9 +21,9 @@ pub struct Config {
     /// It gets broken to `class_rules` and `name_rules`, these are actually used by the wm
     rules: Vec<SpawnRule>,
     #[serde(skip)]
-    pub(crate) class_rules: HashMap<String, TagID>,
+    pub(crate) class_rules: HashMap<String, Vec<TagID>>,
     #[serde(skip)]
-    pub(crate) name_rules: HashMap<String, TagID>,
+    pub(crate) name_rules: HashMap<String, Vec<TagID>>,
     /// The path to the currently loaded config file.
     /// None if there is no config loaded
     #[serde(skip)]
@@ -75,11 +75,11 @@ impl Config {
         let mut name_rules = HashMap::new();
         for rule in self.rules.iter() {
             match rule {
-                SpawnRule::ClassName(name, tag_id) => {
-                    class_rules.insert(name.to_owned(), tag_id.to_owned())
+                SpawnRule::ClassName(name, tag_ids) => {
+                    class_rules.insert(name.to_owned(), tag_ids.to_owned())
                 }
-                SpawnRule::WMName(name, tag_id) => {
-                    name_rules.insert(name.to_owned(), tag_id.to_owned())
+                SpawnRule::WMName(name, tag_ids) => {
+                    name_rules.insert(name.to_owned(), tag_ids.to_owned())
                 }
             };
         }

@@ -6,7 +6,7 @@ use common::TagID;
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) enum SpawnRule {
     // match against WM_CLASS
-    ClassName(String, TagID),
+    ClassName(String, Vec<TagID>),
     // match against WM_NAME
-    WMName(String, TagID),
+    WMName(String, Vec<TagID>),
 }

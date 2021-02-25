@@ -91,12 +91,13 @@ impl<'a> WMState<'a> {
             .split('\0')
             .map(|s| s.to_string())
             .collect::<Vec<_>>();
-        dbg!(&class_names);
 
         for name in class_names.iter() {
-            if let Some(tag_id) = self.config.class_rules.get(name) {
+            if let Some(tag_ids) = self.config.class_rules.get(name) {
                 let mut tags = HashSet::new();
-                tags.insert(tag_id.to_owned());
+                for tag_id in tag_ids.iter() {
+                    tags.insert(tag_id.to_owned());
+                }
                 window.tags = tags;
 
                 return Ok(());
@@ -117,9 +118,11 @@ impl<'a> WMState<'a> {
             .value;
         let wm_name = String::from_utf8(wm_name).expect("utf 8");
 
-        if let Some(tag_id) = self.config.class_rules.get(&wm_name) {
+        if let Some(tag_ids) = self.config.class_rules.get(&wm_name) {
             let mut tags = HashSet::new();
-            tags.insert(tag_id.to_owned());
+            for tag_id in tag_ids.iter() {
+                tags.insert(tag_id.to_owned());
+            }
             window.tags = tags;
         }
 
