@@ -23,7 +23,7 @@ use crate::{
 use common::{Command, ConfigSubcommand, LayoutSubcommand};
 
 #[derive(Debug)]
-pub struct WMState<'a> {
+pub(crate) struct WMState<'a> {
     pub(crate) conn: &'a RustConnection,
     pub(crate) config: Config,
     screen_num: usize,
@@ -127,7 +127,7 @@ impl<'a> WMState<'a> {
     }
 
     /// Scan for pre-existing windows and manage them
-    pub fn scan_windows(&mut self) -> Result<(), ReplyOrIdError> {
+    pub(crate) fn scan_windows(&mut self) -> Result<(), ReplyOrIdError> {
         let screen = &self.conn.setup().roots[self.screen_num];
         let tree = self.conn.query_tree(screen.root)?.reply()?;
 
@@ -232,7 +232,7 @@ impl<'a> WMState<'a> {
     }
 
     /// Handle a client from the socket
-    pub fn handle_client(&mut self, stream: &mut UnixStream) -> anyhow::Result<String> {
+    pub(crate) fn handle_client(&mut self, stream: &mut UnixStream) -> anyhow::Result<String> {
         let cmd = common::read_message(stream)?;
         let cmd: Command = serde_json::from_str(&cmd).context("Invalid command")?;
 
