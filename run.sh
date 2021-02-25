@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+cargo build
+
 # NOTE: Resizing doesn't work correctly in Xephyr,
 # to be exact the pointer won't warp to the bottom right corner of the window.
 
