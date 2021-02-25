@@ -1,4 +1,7 @@
-use x11rb::{errors::ReplyOrIdError, protocol::xproto::*};
+use {
+    anyhow::anyhow,
+    x11rb::{errors::ReplyOrIdError, protocol::xproto::*},
+};
 
 use crate::{utils::clean_mask, WMState};
 
@@ -139,9 +142,9 @@ impl<'a> WMState<'a> {
                     )?
                     .reply()?
                     .value32()
-                    .ok_or_else(|| anyhow::Error::msg("Wrong format"))?
+                    .ok_or_else(|| anyhow!("Wrong format"))?
                     .next()
-                    .ok_or_else(|| anyhow::Error::msg("No value in reply"))?;
+                    .ok_or_else(|| anyhow!("No value in reply"))?;
                 if self.windows.contains(id) {
                     // We can unwrap because if it didn't exist we wouldn't be here
                     let win_state = self.windows.get_mut(idx).unwrap();
