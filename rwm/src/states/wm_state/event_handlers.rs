@@ -95,13 +95,10 @@ impl<'a> WMState<'a> {
         Ok(())
     }
 
-    pub(crate) fn on_button_release(
-        &mut self,
-        event: ButtonPressEvent,
-    ) -> Result<(), ReplyOrIdError> {
+    pub(crate) fn on_button_release(&mut self, event: ButtonPressEvent) {
         // Left or Right mouse click
         if ![1, 3].contains(&event.detail) {
-            return Ok(());
+            return;
         }
 
         if self.dragging_window.is_some() {
@@ -110,7 +107,6 @@ impl<'a> WMState<'a> {
         if self.resizing_window.is_some() {
             self.resizing_window = None
         }
-        Ok(())
     }
 
     pub(crate) fn on_enter_notify(

@@ -8,7 +8,7 @@ mod utils;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf};
 
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use structopt::StructOpt;
 use x11rb::{
     connection::Connection,
@@ -52,13 +52,11 @@ fn main() -> anyhow::Result<()> {
     let (conn, screen_num) = RustConnection::connect(None).unwrap();
     let screen = &conn.setup().roots[screen_num];
 
-    if let Err(err) = try_become_wm(&conn, screen) {
-        if let ReplyError::X11Error(error) = err {
-            if error.error_kind == ErrorKind::Access {
-                bail!("Another WM in already running.");
-            } else {
-                bail!("Something went wrong");
-            }
+    if let Err(ReplyError::X11Error(error)) = try_become_wm(&conn, screen) {
+        if error.error_kind == ErrorKind::Access {
+            bail!("Another WM in already running.");
+        } else {
+            bail!("Something went wrong");
         }
     };
 
@@ -70,7 +68,9 @@ fn main() -> anyhow::Result<()> {
             .with_context(|| format!("Failed to load configuration file {:?}", path))?;
     }
     let mut wm_state = WMState::new(&conn, screen_num, config);
-    wm_state.scan_windows().context("Error while looking for pre-existing windows")?;
+    wm_state
+        .scan_windows()
+        .context("Error while looking for pre-existing windows")?;
 
     let listener = UnixListener::bind("/tmp/rwm.sock").context("Failed to connect to socket")?;
     listener.set_nonblocking(true).unwrap();
@@ -125,6 +125,5 @@ fn main() -> anyhow::Result<()> {
         };
     }
 
-    utils::clean_up().context("Failed to clean up.")?;
-    Ok(())
+    utils::clean_up().context("Failed to clean up.")
 }

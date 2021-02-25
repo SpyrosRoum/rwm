@@ -1,5 +1,6 @@
-use std::{error::Error, fs};
+use std::fs;
 
+use anyhow::{Context, Result};
 use x11rb::protocol::xproto::KeyButMask;
 
 use crate::states::{TagState, WinState};
@@ -16,8 +17,8 @@ pub(crate) fn clean_mask(mask: u16) -> u16 {
             | KeyButMask::Mod5)
 }
 
-pub(crate) fn clean_up() -> Result<(), Box<dyn Error>> {
-    fs::remove_file("/tmp/rwm.sock")?;
+pub(crate) fn clean_up() -> Result<()> {
+    fs::remove_file("/tmp/rwm.sock").context("Failed to remove socket")?;
 
     Ok(())
 }
