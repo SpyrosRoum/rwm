@@ -3,6 +3,7 @@ mod config;
 mod focus_history;
 mod layouts;
 mod mod_mask;
+mod spawn_rule;
 mod states;
 mod utils;
 

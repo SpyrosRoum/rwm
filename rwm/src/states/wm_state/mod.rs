@@ -1,7 +1,7 @@
 mod command_handlers;
 mod event_handlers;
 
-use std::os::unix::net::UnixStream;
+use std::{collections::HashSet, os::unix::net::UnixStream};
 
 use anyhow::Context;
 use x11rb::{
@@ -57,6 +57,71 @@ impl<'a> WMState<'a> {
             tags,
             layout: def_layout,
         }
+    }
+
+    /// Apply user defined rules on the given window (ex put it in tag 2 by default)
+    fn apply_rules(&mut self, window: &mut WinState) -> Result<(), ReplyOrIdError> {
+        if self.config.class_rules.is_empty() && self.config.name_rules.is_empty() {
+            // No rules to apply
+            return Ok(());
+        }
+
+        let class_names = self
+            .conn
+            .get_property(
+                false,
+                window.id,
+                AtomEnum::WM_CLASS,
+                AtomEnum::STRING,
+                0,
+                1024,
+            )?
+            .reply()?
+            .value; // Alternative we would do .value8().unwrap().collect::<Vec<_>>();
+
+        // We should usually get two values, technically the first is the instance name and the second one the class name
+        // Technically we should check against the second value only but instead we will check against both
+        // I believe some apps only return one value (could be wrong on that) but also checking both is more user friendly
+        // If there is some reason to *not* do this please raise an issue!
+        let class_names = String::from_utf8(class_names)
+            .expect("utf 8")
+            .trim_matches('\0')
+            .split('\0')
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        dbg!(&class_names);
+
+        for name in class_names.iter() {
+            if let Some(tag_id) = self.config.class_rules.get(name) {
+                let mut tags = HashSet::new();
+                tags.insert(tag_id.to_owned());
+                window.tags = tags;
+
+                return Ok(());
+            }
+        }
+
+        let wm_name = self
+            .conn
+            .get_property(
+                false,
+                window.id,
+                AtomEnum::WM_NAME,
+                AtomEnum::STRING,
+                0,
+                1024,
+            )?
+            .reply()?
+            .value;
+        let wm_name = String::from_utf8(wm_name).expect("utf 8");
+
+        if let Some(tag_id) = self.config.class_rules.get(&wm_name) {
+            let mut tags = HashSet::new();
+            tags.insert(tag_id.to_owned());
+            window.tags = tags;
+        }
+
+        Ok(())
     }
 
     /// Scan for pre-existing windows and manage them
@@ -126,10 +191,15 @@ impl<'a> WMState<'a> {
         self.conn.map_window(window)?;
 
         let geom = self.conn.get_geometry(window)?.reply()?;
+
         // We give a reference to the tags so the window can deduce what tags are currently visible.
         // We also push at the front of the focus history because the window now has focus
-        self.windows
-            .push_front(WinState::new(window, &geom, self.tags.as_slice()));
+        let mut window = WinState::new(window, &geom, self.tags.as_slice());
+
+        // Apply the user defined rules about where the window should spawn
+        self.apply_rules(&mut window)?;
+
+        self.windows.push_front(window);
 
         self.update_windows()
     }

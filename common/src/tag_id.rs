@@ -8,6 +8,13 @@ use crate::TagValueError;
 #[derive(Display, Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct TagID(u8);
 
+impl TagID {
+    /// Produce a `TagID` from the given number with no bound checks
+    pub fn from_int_unchecked<N: Into<u8>>(n: N) -> Self {
+        Self(n.into())
+    }
+}
+
 impl FromStr for TagID {
     type Err = TagValueError;
 

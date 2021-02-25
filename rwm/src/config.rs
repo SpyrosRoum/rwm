@@ -1,9 +1,9 @@
-use std::{convert::TryFrom, fs, mem, path::PathBuf};
+use std::{collections::HashMap, convert::TryFrom, fs, mem, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{color::Color, layouts::LayoutType, mod_mask::XModMask};
-use common::LoadConfigError;
+use crate::{color::Color, layouts::LayoutType, mod_mask::XModMask, spawn_rule::SpawnRule};
+use common::{LoadConfigError, TagID};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -17,6 +17,13 @@ pub struct Config {
     pub(crate) follow_cursor: bool,
     /// Useless gap between windows
     pub(crate) gap: u32,
+    /// This is used only for printing and reading to and from a config file
+    /// It gets broken to `class_rules` and `name_rules`, these are actually used by the wm
+    rules: Vec<SpawnRule>,
+    #[serde(skip)]
+    pub(crate) class_rules: HashMap<String, TagID>,
+    #[serde(skip)]
+    pub(crate) name_rules: HashMap<String, TagID>,
     /// The path to the currently loaded config file.
     /// None if there is no config loaded
     #[serde(skip)]
@@ -42,6 +49,9 @@ impl Default for Config {
             ],
             follow_cursor: true,
             gap: 4,
+            rules: vec![],
+            class_rules: HashMap::new(),
+            name_rules: HashMap::new(),
             path: None,
         }
     }
@@ -59,6 +69,23 @@ impl Config {
         new_config.path = Some(path);
 
         let _ = mem::replace(self, new_config);
+
+        // Extract the ClassName and the WMName rules from self.rules and add them to the proper hashmap
+        let mut class_rules = HashMap::new();
+        let mut name_rules = HashMap::new();
+        for rule in self.rules.iter() {
+            match rule {
+                SpawnRule::ClassName(name, tag_id) => {
+                    class_rules.insert(name.to_owned(), tag_id.to_owned())
+                }
+                SpawnRule::WMName(name, tag_id) => {
+                    name_rules.insert(name.to_owned(), tag_id.to_owned())
+                }
+            };
+        }
+        let _ = mem::replace(&mut self.class_rules, class_rules);
+        let _ = mem::replace(&mut self.name_rules, name_rules);
+
         Ok(())
     }
 }
