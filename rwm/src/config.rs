@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fs, path::PathBuf};
+use std::{convert::TryFrom, fs, mem, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -58,7 +58,7 @@ impl Config {
         let mut new_config: Self = toml::from_str(new_config.as_str())?;
         new_config.path = Some(path);
 
-        std::mem::swap(self, &mut new_config);
+        let _ = mem::replace(self, new_config);
         Ok(())
     }
 }
