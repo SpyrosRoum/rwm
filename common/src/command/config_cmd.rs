@@ -7,8 +7,9 @@ use structopt::StructOpt;
 pub enum ConfigSubcommand {
     /// Print the current configuration
     Print,
+    /// (Re)load config from a file
     Load {
-        /// Path to the configuration file. If left empty it will try to reload the current file.
+        /// Path to the configuration file. If left empty it will try to reload the last file used.
         path: Option<PathBuf>,
     },
 }
