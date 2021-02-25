@@ -185,7 +185,11 @@ impl<'a> WMState<'a> {
                 })?
             }
             Command::Config(ConfigSubcommand::Print) => {
-                return Ok(toml::to_string_pretty(&self.config).unwrap());
+                return Ok(ron::ser::to_string_pretty(
+                    &self.config,
+                    ron::ser::PrettyConfig::default(),
+                )
+                .context("Failed to serialise current configuration")?);
             }
             Command::Config(ConfigSubcommand::Load { path }) => {
                 self.config.load(path)?;

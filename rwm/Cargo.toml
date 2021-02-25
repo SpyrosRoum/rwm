@@ -12,6 +12,6 @@ polling = "2.0"
 common = { path = "../common" }
 serde = "1"
 serde_json = "1"
-toml = "0.5"
+ron = "0.6"
 anyhow = "1"
 structopt = "0.3"

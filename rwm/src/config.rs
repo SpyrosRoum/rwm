@@ -55,7 +55,7 @@ impl Config {
         let path = path.unwrap_or_else(|| self.path.clone().unwrap());
 
         let new_config = fs::read_to_string(path.clone())?;
-        let mut new_config: Self = toml::from_str(new_config.as_str())?;
+        let mut new_config: Self = ron::from_str(new_config.as_str())?;
         new_config.path = Some(path);
 
         let _ = mem::replace(self, new_config);

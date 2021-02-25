@@ -64,8 +64,8 @@ impl LoadConfigError {
     }
 }
 
-impl From<toml::de::Error> for LoadConfigError {
-    fn from(e: toml::de::Error) -> Self {
+impl From<ron::Error> for LoadConfigError {
+    fn from(e: ron::Error) -> Self {
         Self::new(e.to_string())
     }
 }

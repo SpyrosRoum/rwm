@@ -46,7 +46,10 @@ fn main() -> anyhow::Result<()> {
     let options: Opt = Opt::from_args();
     if options.print {
         let config = Config::default();
-        println!("{}", toml::to_string(&config)?);
+        println!(
+            "{}",
+            ron::ser::to_string_pretty(&config, ron::ser::PrettyConfig::default())?
+        );
         return Ok(());
     }
     let (conn, screen_num) = RustConnection::connect(None).unwrap();
