@@ -1,12 +1,13 @@
 mod grid;
 mod monad_tall;
 
-use serde::{Deserialize, Serialize};
-use x11rb::{errors::ReplyOrIdError, rust_connection::RustConnection};
+use {
+    serde::{Deserialize, Serialize},
+    x11rb::{connection::Connection, errors::ReplyOrIdError, rust_connection::RustConnection},
+};
 
 use crate::focus_history::FocusHist;
 use common::TagID;
-use x11rb::connection::Connection;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) enum LayoutType {

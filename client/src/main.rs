@@ -1,7 +1,9 @@
 use std::{io::Write, os::unix::net::UnixStream, path::Path};
 
-use anyhow::{bail, ensure, Context, Result};
-use structopt::StructOpt;
+use {
+    anyhow::{bail, ensure, Context, Result},
+    structopt::StructOpt,
+};
 
 use common::{into_message, read_message, Command};
 

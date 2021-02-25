@@ -1,7 +1,9 @@
-use x11rb::protocol::xproto::ConnectionExt;
+use {
+    anyhow::{Context, Result},
+    x11rb::protocol::xproto::ConnectionExt,
+};
 
 use crate::{utils::visible, WMState};
-use anyhow::{Context, Result};
 use common::{Direction, TagSubcommand, WindowSubcommand, WindowToggle};
 
 impl<'a> WMState<'a> {

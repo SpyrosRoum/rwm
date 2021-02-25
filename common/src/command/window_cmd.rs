@@ -1,5 +1,7 @@
-use serde::{Deserialize, Serialize};
-use structopt::StructOpt;
+use {
+    serde::{Deserialize, Serialize},
+    structopt::StructOpt,
+};
 
 use crate::{Direction, TagID};
 

@@ -4,13 +4,13 @@ mod tag_id;
 
 use std::{io::Read, os::unix::net::UnixStream};
 
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
-use structopt::StructOpt;
+use {
+    anyhow::{Context, Result},
+    serde::{Deserialize, Serialize},
+    structopt::StructOpt,
+};
 
-pub use command::*;
-pub use errors::*;
-pub use tag_id::TagID;
+pub use {command::*, errors::*, tag_id::TagID};
 
 /// A function that serialises a message and produces a string that can be directly sent to the wm or the client
 pub fn into_message<T: Serialize>(msg: T) -> Result<String> {

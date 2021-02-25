@@ -4,13 +4,17 @@ mod layout_cmd;
 mod tag_cmd;
 mod window_cmd;
 
-use serde::{Deserialize, Serialize};
-use structopt::StructOpt;
+use {
+    serde::{Deserialize, Serialize},
+    structopt::StructOpt,
+};
 
-pub use config_cmd::ConfigSubcommand;
-pub use layout_cmd::LayoutSubcommand;
-pub use tag_cmd::TagSubcommand;
-pub use window_cmd::{WindowSubcommand, WindowToggle};
+pub use {
+    config_cmd::ConfigSubcommand,
+    layout_cmd::LayoutSubcommand,
+    tag_cmd::TagSubcommand,
+    window_cmd::{WindowSubcommand, WindowToggle},
+};
 
 #[derive(Deserialize, Serialize, StructOpt, Debug)]
 #[structopt(name = "rwmc", about = "The rwm client")]

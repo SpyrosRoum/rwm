@@ -6,8 +6,10 @@ use std::{
     str::FromStr,
 };
 
-use serde::{Deserialize, Serialize};
-use x11rb::protocol::xproto::ModMask;
+use {
+    serde::{Deserialize, Serialize},
+    x11rb::protocol::xproto::ModMask,
+};
 
 use common::ParseModMaskError;
 

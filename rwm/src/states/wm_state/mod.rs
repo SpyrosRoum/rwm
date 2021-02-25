@@ -3,12 +3,14 @@ mod event_handlers;
 
 use std::{collections::HashSet, os::unix::net::UnixStream};
 
-use anyhow::Context;
-use x11rb::{
-    connection::Connection,
-    errors::ReplyOrIdError,
-    protocol::{xproto::*, Event},
-    rust_connection::RustConnection,
+use {
+    anyhow::Context,
+    x11rb::{
+        connection::Connection,
+        errors::ReplyOrIdError,
+        protocol::{xproto::*, Event},
+        rust_connection::RustConnection,
+    },
 };
 
 use crate::{

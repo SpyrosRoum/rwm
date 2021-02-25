@@ -9,18 +9,19 @@ mod utils;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf};
 
-use anyhow::{bail, Context};
-use structopt::StructOpt;
-use x11rb::{
-    connection::Connection,
-    errors::ReplyError,
-    protocol::{xproto::*, ErrorKind, Event},
-    rust_connection::RustConnection,
+use {
+    anyhow::{bail, Context},
+    structopt::StructOpt,
+    x11rb::{
+        connection::Connection,
+        errors::ReplyError,
+        protocol::{xproto::*, ErrorKind, Event},
+        rust_connection::RustConnection,
+    },
 };
 
 use common::into_message;
-use config::Config;
-use states::WMState;
+use {config::Config, states::WMState};
 
 #[derive(StructOpt, Debug)]
 struct Opt {

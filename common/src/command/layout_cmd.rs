@@ -1,5 +1,7 @@
-use serde::{Deserialize, Serialize};
-use structopt::StructOpt;
+use {
+    serde::{Deserialize, Serialize},
+    structopt::StructOpt,
+};
 
 #[derive(Deserialize, Serialize, StructOpt, Debug)]
 pub enum LayoutSubcommand {

@@ -1,7 +1,9 @@
 use std::fs;
 
-use anyhow::{Context, Result};
-use x11rb::protocol::xproto::KeyButMask;
+use {
+    anyhow::{Context, Result},
+    x11rb::protocol::xproto::KeyButMask,
+};
 
 use crate::states::{TagState, WinState};
 

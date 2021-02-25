@@ -1,6 +1,7 @@
+use std::convert::TryInto;
+
 use crate::layouts::LayoutType;
 use common::{TagID, TagValueError};
-use std::convert::TryInto;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TagState {

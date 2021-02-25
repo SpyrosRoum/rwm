@@ -1,7 +1,9 @@
 use std::{convert::TryFrom, str::FromStr};
 
-use derive_more::Display;
-use serde::{Deserialize, Serialize};
+use {
+    derive_more::Display,
+    serde::{Deserialize, Serialize},
+};
 
 use crate::TagValueError;
 
