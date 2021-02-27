@@ -10,10 +10,6 @@ impl<'a> WMState<'a> {
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
-        self.conn.configure_window(
-            event.event,
-            &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE),
-        )?;
         // Left or Right mouse click
         if ![1, 3].contains(&event.detail) {
             return Ok(());
