@@ -22,9 +22,9 @@ impl FromStr for XModMask {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.trim().to_ascii_lowercase().as_str() {
-            "shift" => Ok(Self(ModMask::Shift)),
-            "lock" => Ok(Self(ModMask::Lock)),
-            "control" | "ctrl" => Ok(Self(ModMask::Control)),
+            "shift" => Ok(Self(ModMask::SHIFT)),
+            "lock" => Ok(Self(ModMask::LOCK)),
+            "control" | "ctrl" => Ok(Self(ModMask::CONTROL)),
             "mod1" | "mod 1" => Ok(Self(ModMask::M1)),
             "mod2" | "mod 2" => Ok(Self(ModMask::M2)),
             "mod3" | "mod 3" => Ok(Self(ModMask::M3)),
@@ -48,15 +48,15 @@ impl TryFrom<String> for XModMask {
 impl From<XModMask> for String {
     fn from(mask: XModMask) -> Self {
         match mask.0 {
-            ModMask::Shift => String::from("Shift"),
-            ModMask::Lock => String::from("Lock"),
-            ModMask::Control => String::from("Control"),
+            ModMask::SHIFT => String::from("Shift"),
+            ModMask::LOCK => String::from("Lock"),
+            ModMask::CONTROL => String::from("Control"),
             ModMask::M1 => String::from("Mod 1"),
             ModMask::M2 => String::from("Mod 2"),
             ModMask::M3 => String::from("Mod 3"),
             ModMask::M4 => String::from("Mod 4"),
             ModMask::M5 => String::from("Mod 5"),
-            ModMask::Any => String::from("Any"),
+            ModMask::ANY => String::from("Any"),
             _ => unreachable!(),
         }
     }
@@ -76,6 +76,6 @@ impl From<XModMask> for ModMask {
 
 impl From<XModMask> for u16 {
     fn from(mask: XModMask) -> Self {
-        mask.0 as u16
+        u16::from(mask.0)
     }
 }

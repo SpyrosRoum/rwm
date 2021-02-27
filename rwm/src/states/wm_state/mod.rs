@@ -149,7 +149,7 @@ impl<'a> WMState<'a> {
                 continue;
             }
             let attr = attr.unwrap();
-            if !attr.override_redirect && attr.map_state != MapState::Unmapped {
+            if !attr.override_redirect && attr.map_state != MapState::UNMAPPED {
                 self.manage_window(win)?;
             }
         }
@@ -166,10 +166,10 @@ impl<'a> WMState<'a> {
 
         // Register the proper events with the window
         let events = ChangeWindowAttributesAux::default().event_mask(
-            EventMask::EnterWindow
-                | EventMask::FocusChange
-                | EventMask::PropertyChange
-                | EventMask::StructureNotify,
+            EventMask::ENTER_WINDOW
+                | EventMask::FOCUS_CHANGE
+                | EventMask::PROPERTY_CHANGE
+                | EventMask::STRUCTURE_NOTIFY,
         );
         self.conn
             .change_window_attributes(window, &events)?
@@ -178,18 +178,19 @@ impl<'a> WMState<'a> {
         // Get Button Press events
         // This ugly line is needed because grab_button expects something that implements Into<u16>
         // but EventMask is u32
-        let event_mask =
-            (EventMask::ButtonPress | EventMask::ButtonRelease | EventMask::PointerMotion) as u16;
+        let event_mask = u32::from(
+            EventMask::BUTTON_PRESS | EventMask::BUTTON_RELEASE | EventMask::POINTER_MOTION,
+        );
         self.conn.grab_button(
             false,
             window,
-            event_mask,
-            GrabMode::Async,
-            GrabMode::Async,
+            event_mask as u16,
+            GrabMode::ASYNC,
+            GrabMode::ASYNC,
             x11rb::NONE,
             x11rb::NONE,
-            ButtonIndex::Any,
-            ModMask::Any,
+            ButtonIndex::ANY,
+            ModMask::ANY,
         )?;
 
         // Show the window
@@ -213,7 +214,7 @@ impl<'a> WMState<'a> {
     fn unmanage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
         self.conn.unmap_window(window)?;
         self.conn
-            .ungrab_button(ButtonIndex::Any, window, ModMask::Any)?;
+            .ungrab_button(ButtonIndex::ANY, window, ModMask::ANY)?;
 
         self.windows.forget(window, self.tags.as_slice());
         self.update_windows()
@@ -296,7 +297,7 @@ impl<'a> WMState<'a> {
             // Bring the window up, useful if windows are floating
             self.conn.configure_window(
                 focused.id,
-                &ConfigureWindowAux::new().stack_mode(StackMode::Above),
+                &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE),
             )?;
             // Give it the correct border color
             let attrs =
@@ -304,12 +305,12 @@ impl<'a> WMState<'a> {
             self.conn.change_window_attributes(focused.id, &attrs)?;
             // Give keyboard input to window
             self.conn
-                .set_input_focus(InputFocus::None, focused.id, x11rb::CURRENT_TIME)?;
+                .set_input_focus(InputFocus::NONE, focused.id, x11rb::CURRENT_TIME)?;
         } else {
             // Give input focus to root window, otherwise no input is possible
             let root = self.conn.setup().roots[self.screen_num].root;
             self.conn
-                .set_input_focus(InputFocus::None, root, x11rb::CURRENT_TIME)?;
+                .set_input_focus(InputFocus::NONE, root, x11rb::CURRENT_TIME)?;
         }
 
         let visible_tags = self

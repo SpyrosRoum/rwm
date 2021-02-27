@@ -34,13 +34,12 @@ struct Opt {
 
 fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyError> {
     let change = ChangeWindowAttributesAux::default().event_mask(
-        EventMask::SubstructureRedirect
-            | EventMask::SubstructureNotify
-            | EventMask::ButtonPress
-            | EventMask::StructureNotify
-            | EventMask::PropertyChange,
+        EventMask::SUBSTRUCTURE_REDIRECT
+            | EventMask::SUBSTRUCTURE_NOTIFY
+            | EventMask::BUTTON_PRESS
+            | EventMask::STRUCTURE_NOTIFY
+            | EventMask::PROPERTY_CHANGE,
     );
-
     conn.change_window_attributes(screen.root, &change)?.check()
 }
 

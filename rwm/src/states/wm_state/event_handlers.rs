@@ -12,7 +12,7 @@ impl<'a> WMState<'a> {
     ) -> Result<(), ReplyOrIdError> {
         self.conn.configure_window(
             event.event,
-            &ConfigureWindowAux::new().stack_mode(StackMode::Above),
+            &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE),
         )?;
         // Left or Right mouse click
         if ![1, 3].contains(&event.detail) {
@@ -124,7 +124,7 @@ impl<'a> WMState<'a> {
     }
 
     pub(crate) fn on_property_notify(&mut self, event: PropertyNotifyEvent) -> anyhow::Result<()> {
-        if event.state == Property::Delete {
+        if event.state == Property::DELETE {
             return Ok(());
         }
         if let Some((idx, win_state)) = self.windows.find_by_id(event.window) {

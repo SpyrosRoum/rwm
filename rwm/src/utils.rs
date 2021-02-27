@@ -8,15 +8,18 @@ use {
 use crate::states::{TagState, WinState};
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {
-    // TODO: num lock is not always Mod2, find a way to get that dynamically
-    mask & !(KeyButMask::Mod2 | KeyButMask::Lock)
-        & (KeyButMask::Shift
-            | KeyButMask::Control
-            | KeyButMask::Mod1
-            | KeyButMask::Mod2
-            | KeyButMask::Mod3
-            | KeyButMask::Mod4
-            | KeyButMask::Mod5)
+    // ToDo: I think num lock is not always Mod2, find a way to get that dynamically
+    let num_lock = u16::from(KeyButMask::MOD2 | KeyButMask::LOCK);
+    (mask & !num_lock)
+        & u16::from(
+            KeyButMask::SHIFT
+                | KeyButMask::CONTROL
+                | KeyButMask::MOD1
+                | KeyButMask::MOD2
+                | KeyButMask::MOD3
+                | KeyButMask::MOD4
+                | KeyButMask::MOD5,
+        )
 }
 
 pub(crate) fn clean_up() -> Result<()> {
