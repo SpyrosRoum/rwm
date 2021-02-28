@@ -1,9 +1,12 @@
-use std::{collections::HashMap, convert::TryFrom, fs, mem, path::PathBuf};
+use std::{collections::HashMap, convert::TryFrom, mem, path::PathBuf, fs::File};
 
-use serde::{Deserialize, Serialize};
+use {
+    anyhow::{Result, bail, Context},
+    serde::{Deserialize, Serialize}
+};
 
 use crate::{color::Color, layouts::LayoutType, mod_mask::XModMask, spawn_rule::SpawnRule};
-use common::{LoadConfigError, TagID};
+use common::TagID;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -58,14 +61,14 @@ impl Default for Config {
 }
 
 impl Config {
-    pub(crate) fn load(&mut self, path: Option<PathBuf>) -> Result<(), LoadConfigError> {
+    pub(crate) fn load(&mut self, path: Option<PathBuf>) -> Result<()> {
         if path.is_none() && self.path.is_none() {
-            return Err(LoadConfigError::new("No configuration file found"));
+            bail!("No configuration file specified");
         }
         let path = path.unwrap_or_else(|| self.path.clone().unwrap());
 
-        let new_config = fs::read_to_string(path.clone())?;
-        let mut new_config: Self = ron::from_str(new_config.as_str())?;
+        let conf_file = File::open(&path).context(format!("Failed to open `{}`", path.display()))?;
+        let mut new_config: Self = ron::de::from_reader(conf_file).context(format!("Failed to parse `{}`", path.display()))?;
         new_config.path = Some(path);
 
         let _ = mem::replace(self, new_config);

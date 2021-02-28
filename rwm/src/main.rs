@@ -67,9 +67,7 @@ fn main() -> anyhow::Result<()> {
     // We are the window manager!
     let mut config = Config::default();
     if let Some(path) = options.config {
-        config
-            .load(Some(path.clone()))
-            .with_context(|| format!("Failed to load configuration file {:?}", path))?;
+        config.load(Some(path))?;
     }
     let mut wm_state = WMState::new(&conn, screen_num, config);
     wm_state
