@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryFrom, mem, path::PathBuf, fs::File};
+use std::{collections::HashMap, convert::TryFrom, path::PathBuf, fs::File};
 
 use {
     anyhow::{Result, bail, Context},
@@ -71,7 +71,7 @@ impl Config {
         let mut new_config: Self = ron::de::from_reader(conf_file).context(format!("Failed to parse `{}`", path.display()))?;
         new_config.path = Some(path);
 
-        let _ = mem::replace(self, new_config);
+        let _ = std::mem::replace(self, new_config);
 
         // Extract the ClassName and the WMName rules from self.rules and add them to the proper hashmap
         let mut class_rules = HashMap::new();
@@ -86,8 +86,8 @@ impl Config {
                 }
             };
         }
-        let _ = mem::replace(&mut self.class_rules, class_rules);
-        let _ = mem::replace(&mut self.name_rules, name_rules);
+        self.class_rules = class_rules;
+        self.name_rules = name_rules;
 
         Ok(())
     }
