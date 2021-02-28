@@ -1,8 +1,8 @@
-use std::{collections::HashMap, convert::TryFrom, path::PathBuf, fs::File};
+use std::{collections::HashMap, convert::TryFrom, fs::File, path::PathBuf};
 
 use {
-    anyhow::{Result, bail, Context},
-    serde::{Deserialize, Serialize}
+    anyhow::{bail, Context, Result},
+    serde::{Deserialize, Serialize},
 };
 
 use crate::{color::Color, layouts::LayoutType, mod_mask::XModMask, spawn_rule::SpawnRule};
@@ -61,22 +61,13 @@ impl Default for Config {
 }
 
 impl Config {
-    pub(crate) fn load(&mut self, path: Option<PathBuf>) -> Result<()> {
-        if path.is_none() && self.path.is_none() {
-            bail!("No configuration file specified");
-        }
-        let path = path.unwrap_or_else(|| self.path.clone().unwrap());
-
-        let conf_file = File::open(&path).context(format!("Failed to open `{}`", path.display()))?;
-        let mut new_config: Self = ron::de::from_reader(conf_file).context(format!("Failed to parse `{}`", path.display()))?;
-        new_config.path = Some(path);
-
-        let _ = std::mem::replace(self, new_config);
-
-        // Extract the ClassName and the WMName rules from self.rules and add them to the proper hashmap
+    /// Split SpawnRules to two HashMaps, one with class rules and one with name rules
+    fn extract_rules(
+        rules: &[SpawnRule],
+    ) -> (HashMap<String, Vec<TagID>>, HashMap<String, Vec<TagID>>) {
         let mut class_rules = HashMap::new();
         let mut name_rules = HashMap::new();
-        for rule in self.rules.iter() {
+        for rule in rules.iter() {
             match rule {
                 SpawnRule::ClassName(name, tag_ids) => {
                     class_rules.insert(name.to_owned(), tag_ids.to_owned())
@@ -86,6 +77,39 @@ impl Config {
                 }
             };
         }
+
+        (class_rules, name_rules)
+    }
+
+    pub(crate) fn from_file(path: PathBuf) -> Result<Self> {
+        let conf_file =
+            File::open(&path).context(format!("Failed to open `{}`", path.display()))?;
+        let mut config: Self = ron::de::from_reader(conf_file)
+            .context(format!("Failed to parse `{}`", path.display()))?;
+        config.path = Some(path);
+
+        let (class_rules, name_rules) = Self::extract_rules(&config.rules);
+        config.class_rules = class_rules;
+        config.name_rules = name_rules;
+
+        Ok(config)
+    }
+
+    pub(crate) fn load(&mut self, path: Option<PathBuf>) -> Result<()> {
+        if path.is_none() && self.path.is_none() {
+            bail!("No configuration file specified");
+        }
+        let path = path.unwrap_or_else(|| self.path.clone().unwrap());
+
+        let conf_file =
+            File::open(&path).context(format!("Failed to open `{}`", path.display()))?;
+        let mut new_config: Self = ron::de::from_reader(conf_file)
+            .context(format!("Failed to parse `{}`", path.display()))?;
+        new_config.path = Some(path);
+
+        let _ = std::mem::replace(self, new_config);
+
+        let (class_rules, name_rules) = Self::extract_rules(&self.rules);
         self.class_rules = class_rules;
         self.name_rules = name_rules;
 

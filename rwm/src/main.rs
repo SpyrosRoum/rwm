@@ -65,10 +65,16 @@ fn main() -> anyhow::Result<()> {
     };
 
     // We are the window manager!
-    let mut config = Config::default();
-    if let Some(path) = options.config {
-        config.load(Some(path))?;
+
+    let config = match options.config {
+        Some(path) => Config::from_file(path)?,
+        None => Config::default()
+    };
+
+    if config.layouts.is_empty() {
+        bail!("There needs to be at least one layout in the config");
     }
+
     let mut wm_state = WMState::new(&conn, screen_num, config);
     wm_state
         .scan_windows()
