@@ -53,7 +53,9 @@ fn main() -> anyhow::Result<()> {
         );
         return Ok(());
     }
-    let (conn, screen_num) = RustConnection::connect(None).unwrap();
+
+    let (conn, screen_num) =
+        RustConnection::connect(None).context("Failed to connect to the X server")?;
     let screen = &conn.setup().roots[screen_num];
 
     if let Err(ReplyError::X11Error(error)) = try_become_wm(&conn, screen) {
@@ -68,7 +70,7 @@ fn main() -> anyhow::Result<()> {
 
     let config = match options.config {
         Some(path) => Config::from_file(path)?,
-        None => Config::default()
+        None => Config::default(),
     };
 
     if config.layouts.is_empty() {
@@ -86,32 +88,41 @@ fn main() -> anyhow::Result<()> {
     let poller = polling::Poller::new().unwrap();
     poller
         .add(conn.stream(), polling::Event::readable(1))
-        .unwrap();
-    poller.add(&listener, polling::Event::readable(2)).unwrap();
+        .context("epoll add failed")?;
+    poller
+        .add(&listener, polling::Event::readable(2))
+        .context("epoll add failed")?;
     // events from poller go here
     let mut events = Vec::new();
 
     let mut last_motion = 0;
     // Main loop
     while wm_state.running {
-        wm_state.conn.flush().unwrap();
-        poller.wait(&mut events, None).unwrap();
+        wm_state.conn.flush().context("Error talking to X server")?;
+        if poller.wait(&mut events, None).is_err() {
+            // ToDo It's possible I should handle and exit on some errors
+            continue;
+        }
         // We just want to iterate and modify them so we wait for the next event as well
         // By default once it gets the first event from a source it doesn't wait for another one again..
         // We use drain() because we want to clear the event for the next to go in
-        events.drain(..).for_each(|ev| {
+        for ev in events.drain(..) {
             if ev.key == 1 {
                 poller
                     .modify(conn.stream(), polling::Event::readable(1))
-                    .unwrap();
+                    .context("Error setting the interest for new events")?;
             } else if ev.key == 2 {
                 poller
                     .modify(&listener, polling::Event::readable(2))
-                    .unwrap();
+                    .context("Error setting the interest for new events")?;
             }
-        });
+        }
 
-        while let Some(event) = wm_state.conn.poll_for_event().unwrap() {
+        while let Some(event) = wm_state
+            .conn
+            .poll_for_event()
+            .context("Error talking to X server")?
+        {
             if let Event::MotionNotify(ev) = &event {
                 // This is done so we don't update the window for every pixel we move/resize it
                 if ev.time - last_motion < 1000 / 144 {
@@ -120,14 +131,15 @@ fn main() -> anyhow::Result<()> {
                 last_motion = ev.time;
             }
             // ToDo Error handling
-            wm_state.handle_event(event).unwrap();
+            wm_state.handle_event(event)?;
         }
 
         if let Ok((mut stream, _adr)) = listener.accept() {
             let reply = match wm_state.handle_client(&mut stream) {
-                Ok(msg) => into_message(msg).unwrap(),
-                Err(e) => into_message(format!("{:?}", e)).unwrap(),
-            };
+                Ok(msg) => into_message(msg),
+                Err(e) => into_message(format!("{:?}", e)),
+            }
+            .unwrap_or_else(|_| into_message("Failed to serialise original message").unwrap());
             stream.write(reply.as_ref()).ok(); // .ok() is used to basically just ignore the result
             stream.shutdown(Shutdown::Both).ok();
         };
