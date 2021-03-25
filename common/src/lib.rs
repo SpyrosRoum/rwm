@@ -10,7 +10,7 @@ use {
     structopt::StructOpt,
 };
 
-pub use {command::*, errors::*, tag_id::TagID};
+pub use {command::*, errors::*, tag_id::TagId};
 
 /// A function that serialises a message and produces a string that can be directly sent to the wm or the client
 pub fn into_message<T: Serialize>(msg: T) -> Result<String> {

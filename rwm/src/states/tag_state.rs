@@ -1,11 +1,11 @@
 use std::convert::TryInto;
 
 use crate::layouts::LayoutType;
-use common::{TagID, TagValueError};
+use common::{TagId, TagValueError};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TagState {
-    pub(crate) id: TagID,
+    pub(crate) id: TagId,
     pub(crate) visible: bool,
     pub(crate) layout: LayoutType,
 }
@@ -16,8 +16,8 @@ impl PartialEq for TagState {
     }
 }
 
-impl PartialEq<TagID> for TagState {
-    fn eq(&self, other: &TagID) -> bool {
+impl PartialEq<TagId> for TagState {
+    fn eq(&self, other: &TagId) -> bool {
         &self.id == other
     }
 }

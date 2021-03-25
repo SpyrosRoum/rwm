@@ -23,7 +23,7 @@ use crate::{
 use common::{Command, ConfigSubcommand, LayoutSubcommand};
 
 #[derive(Debug)]
-pub(crate) struct WMState<'a> {
+pub(crate) struct WmState<'a> {
     pub(crate) conn: &'a RustConnection,
     pub(crate) config: Config,
     screen_num: usize,
@@ -40,7 +40,7 @@ pub(crate) struct WMState<'a> {
     pub(crate) layout: LayoutType,
 }
 
-impl<'a> WMState<'a> {
+impl<'a> WmState<'a> {
     pub(crate) fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
         let def_layout = config.layouts[0];
         // tags are 1-9 and the default is 1
@@ -240,7 +240,7 @@ impl<'a> WMState<'a> {
         let cmd = common::read_message(stream)?;
         let cmd: Command = serde_json::from_str(&cmd).context("Invalid command")?;
 
-        Ok(self.handle_command(cmd)?)
+        self.handle_command(cmd)
     }
 
     /// Handle the command from a client
@@ -261,11 +261,8 @@ impl<'a> WMState<'a> {
                 })?
             }
             Command::Config(ConfigSubcommand::Print) => {
-                return Ok(ron::ser::to_string_pretty(
-                    &self.config,
-                    ron::ser::PrettyConfig::default(),
-                )
-                .context("Failed to serialise current configuration")?);
+                return ron::ser::to_string_pretty(&self.config, ron::ser::PrettyConfig::default())
+                    .context("Failed to serialise current configuration");
             }
             Command::Config(ConfigSubcommand::Load { path }) => {
                 self.config.load(path)?;

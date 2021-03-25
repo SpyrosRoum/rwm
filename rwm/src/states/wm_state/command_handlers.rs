@@ -3,10 +3,10 @@ use {
     x11rb::protocol::xproto::ConnectionExt,
 };
 
-use crate::{utils::visible, WMState};
+use crate::{utils::visible, WmState};
 use common::{Direction, TagSubcommand, WindowSubcommand, WindowToggle};
 
-impl<'a> WMState<'a> {
+impl<'a> WmState<'a> {
     pub(crate) fn on_tag_cmd(&mut self, sub: TagSubcommand) -> Result<()> {
         match sub {
             TagSubcommand::Toggle { tag_id } => {

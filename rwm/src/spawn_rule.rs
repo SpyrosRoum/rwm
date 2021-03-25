@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-use common::TagID;
+use common::TagId;
 
 /// A simple spawn rule for new windows
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) enum SpawnRule {
     // match against WM_CLASS
-    ClassName(String, Vec<TagID>),
+    ClassName(String, Vec<TagId>),
     // match against WM_NAME
-    WMName(String, Vec<TagID>),
+    WmName(String, Vec<TagId>),
 }

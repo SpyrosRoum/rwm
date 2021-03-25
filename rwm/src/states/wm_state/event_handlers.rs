@@ -3,9 +3,9 @@ use {
     x11rb::{errors::ReplyOrIdError, protocol::xproto::*},
 };
 
-use crate::{utils::clean_mask, WMState};
+use crate::{utils::clean_mask, WmState};
 
-impl<'a> WMState<'a> {
+impl<'a> WmState<'a> {
     pub(crate) fn on_button_press(
         &mut self,
         event: ButtonPressEvent,

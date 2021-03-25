@@ -6,7 +6,7 @@ use crate::{
     states::{TagState, WinState},
     utils,
 };
-use common::{Direction, TagID};
+use common::{Direction, TagId};
 
 /// A wrapper around a VecDequeue.
 /// Currently there is no way to keep a history when switching tags so
@@ -43,7 +43,7 @@ impl FocusHist {
     /// An iterator containing only the windows on the given tags
     pub(crate) fn iter_on_tags_mut(
         &mut self,
-        tags: Vec<TagID>,
+        tags: Vec<TagId>,
     ) -> impl Iterator<Item = &mut WinState> {
         self.windows
             .iter_mut()

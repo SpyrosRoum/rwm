@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use x11rb::protocol::xproto::*;
 
 use crate::states::TagState;
-use common::TagID;
+use common::TagId;
 
 #[derive(Debug, PartialEq)]
 pub struct WinState {
@@ -13,7 +13,7 @@ pub struct WinState {
     pub(crate) width: u16,
     pub(crate) height: u16,
     /// The tags that this window is on
-    pub(crate) tags: HashSet<TagID>,
+    pub(crate) tags: HashSet<TagId>,
     /// If true then ignoring when tilling windows
     pub(crate) floating: bool,
 }

@@ -6,12 +6,12 @@ use x11rb::{
 };
 
 use crate::focus_history::FocusHist;
-use common::TagID;
+use common::TagId;
 
 pub(crate) fn update(
     conn: &RustConnection,
     focus: &mut FocusHist,
-    tags: Vec<TagID>,
+    tags: Vec<TagId>,
     screen_num: usize,
     border_width: u32,
     gap: u32,

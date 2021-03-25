@@ -21,7 +21,7 @@ use {
 };
 
 use common::into_message;
-use {config::Config, states::WMState};
+use {config::Config, states::WmState};
 
 #[derive(StructOpt, Debug)]
 struct Opt {
@@ -77,7 +77,7 @@ fn main() -> anyhow::Result<()> {
         bail!("There needs to be at least one layout in the config");
     }
 
-    let mut wm_state = WMState::new(&conn, screen_num, config);
+    let mut wm_state = WmState::new(&conn, screen_num, config);
     wm_state
         .scan_windows()
         .context("Error while looking for pre-existing windows")?;

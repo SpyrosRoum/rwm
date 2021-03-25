@@ -7,7 +7,7 @@ use {
 };
 
 use crate::focus_history::FocusHist;
-use common::TagID;
+use common::TagId;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) enum LayoutType {
@@ -21,7 +21,7 @@ impl LayoutType {
         &self,
         conn: &RustConnection,
         focus: &mut FocusHist,
-        tags: Vec<TagID>,
+        tags: Vec<TagId>,
         screen_num: usize,
         border_width: u32,
         gap: u32,

@@ -6,7 +6,7 @@ use {
 };
 
 use crate::{color::Color, layouts::LayoutType, mod_mask::XModMask, spawn_rule::SpawnRule};
-use common::TagID;
+use common::TagId;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -24,9 +24,9 @@ pub struct Config {
     /// It gets broken to `class_rules` and `name_rules`, these are actually used by the wm
     rules: Vec<SpawnRule>,
     #[serde(skip)]
-    pub(crate) class_rules: HashMap<String, Vec<TagID>>,
+    pub(crate) class_rules: HashMap<String, Vec<TagId>>,
     #[serde(skip)]
-    pub(crate) name_rules: HashMap<String, Vec<TagID>>,
+    pub(crate) name_rules: HashMap<String, Vec<TagId>>,
     /// The path to the currently loaded config file.
     /// None if there is no config loaded
     #[serde(skip)]
@@ -64,7 +64,7 @@ impl Config {
     /// Split SpawnRules to two HashMaps, one with class rules and one with name rules
     fn extract_rules(
         rules: &[SpawnRule],
-    ) -> (HashMap<String, Vec<TagID>>, HashMap<String, Vec<TagID>>) {
+    ) -> (HashMap<String, Vec<TagId>>, HashMap<String, Vec<TagId>>) {
         let mut class_rules = HashMap::new();
         let mut name_rules = HashMap::new();
         for rule in rules.iter() {
@@ -72,7 +72,7 @@ impl Config {
                 SpawnRule::ClassName(name, tag_ids) => {
                     class_rules.insert(name.to_owned(), tag_ids.to_owned())
                 }
-                SpawnRule::WMName(name, tag_ids) => {
+                SpawnRule::WmName(name, tag_ids) => {
                     name_rules.insert(name.to_owned(), tag_ids.to_owned())
                 }
             };

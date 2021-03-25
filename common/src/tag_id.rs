@@ -8,16 +8,16 @@ use {
 use crate::TagValueError;
 
 #[derive(Display, Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
-pub struct TagID(u8);
+pub struct TagId(u8);
 
-impl TagID {
-    /// Produce a `TagID` from the given number with no bound checks
+impl TagId {
+    /// Produce a `TagId` from the given number with no bound checks
     pub fn from_int_unchecked<N: Into<u8>>(n: N) -> Self {
         Self(n.into())
     }
 }
 
-impl FromStr for TagID {
+impl FromStr for TagId {
     type Err = TagValueError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -30,7 +30,7 @@ impl FromStr for TagID {
     }
 }
 
-impl TryFrom<u8> for TagID {
+impl TryFrom<u8> for TagId {
     type Error = TagValueError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {

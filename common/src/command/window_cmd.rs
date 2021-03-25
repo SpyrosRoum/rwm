@@ -3,7 +3,7 @@ use {
     structopt::StructOpt,
 };
 
-use crate::{Direction, TagID};
+use crate::{Direction, TagId};
 
 #[derive(Deserialize, Serialize, StructOpt, Debug)]
 pub enum WindowSubcommand {
@@ -11,7 +11,7 @@ pub enum WindowSubcommand {
     /// Kill the current window
     Destroy,
     /// Send the current window to another tag
-    Send { tag_id: TagID },
+    Send { tag_id: TagId },
     /// Shift focus from the current window
     Focus(Direction),
     #[structopt(alias = "move")]
