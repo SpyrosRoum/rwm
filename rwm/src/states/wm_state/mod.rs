@@ -294,13 +294,6 @@ impl<'a> WMState<'a> {
         }
 
         if let Some(focused) = self.windows.get_focused() {
-            if focused.floating {
-                // Bring the window up only if it's floating
-                self.conn.configure_window(
-                    focused.id,
-                    &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE),
-                )?;
-            }
             // Give it the correct border color
             let attrs =
                 ChangeWindowAttributesAux::default().border_pixel(self.config.focused_border_color);
