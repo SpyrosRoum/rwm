@@ -22,7 +22,7 @@ impl<'a> WmState<'a> {
 
         if let Some((_, mut window)) = self.windows.find_by_id_mut(event.event) {
             window.floating = true;
-            if event.detail == 1 {
+            if event.detail == 1 && self.resizing_window.is_none() {
                 // Left click -> Move windows
                 let (x, y) = (-event.event_x, -event.event_y);
                 self.dragging_window = Some((window.id, (x, y)));
@@ -31,7 +31,7 @@ impl<'a> WmState<'a> {
                     &ConfigureWindowAux::new().border_width(self.config.border_width),
                 )?;
                 self.set_cursor(event.event, "fleur")?;
-            } else {
+            } else if event.detail == 3 && self.dragging_window.is_none() {
                 // Right click -> Resize window
                 let (dst_x, dst_y) = (
                     window.x + window.width as i16,
@@ -66,8 +66,7 @@ impl<'a> WmState<'a> {
                 }
             }
             should_update = true;
-        }
-        if let Some((window, (og_x, og_y))) = self.resizing_window {
+        } else if let Some((window, (og_x, og_y))) = self.resizing_window {
             if event.event != window {
                 return Ok(());
             } else if let Some((_, win_state)) = self.windows.find_by_id_mut(window) {
@@ -105,14 +104,16 @@ impl<'a> WmState<'a> {
             return Ok(());
         }
 
-        if let Some((window, _)) = self.dragging_window {
-            self.set_cursor(window, "left_ptr")?;
-            self.dragging_window = None;
-        }
-        if let Some((window, _)) = self.resizing_window {
+        if event.detail == 1 {
+            if let Some((window, _)) = self.dragging_window {
+                self.set_cursor(window, "left_ptr")?;
+                self.dragging_window = None;
+            }
+        } else if let Some((window, _)) = self.resizing_window {
             self.set_cursor(window, "left_ptr")?;
             self.resizing_window = None
         }
+
         Ok(())
     }
 
