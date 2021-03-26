@@ -30,6 +30,7 @@ impl<'a> WmState<'a> {
                     window.id,
                     &ConfigureWindowAux::new().border_width(self.config.border_width),
                 )?;
+                self.set_cursor(event.event, "fleur")?;
             } else {
                 // Right click -> Resize window
                 let (dst_x, dst_y) = (
@@ -39,6 +40,7 @@ impl<'a> WmState<'a> {
                 self.conn
                     .warp_pointer(x11rb::NONE, window.id, 0, 0, 0, 0, dst_x, dst_y)?;
                 self.resizing_window = Some((window.id, (dst_x, dst_y)));
+                self.set_cursor(event.event, "bottom_right_corner")?;
             }
         }
         Ok(())
@@ -94,18 +96,24 @@ impl<'a> WmState<'a> {
         Ok(())
     }
 
-    pub(crate) fn on_button_release(&mut self, event: ButtonPressEvent) {
+    pub(crate) fn on_button_release(
+        &mut self,
+        event: ButtonPressEvent,
+    ) -> Result<(), ReplyOrIdError> {
         // Left or Right mouse click
         if ![1, 3].contains(&event.detail) {
-            return;
+            return Ok(());
         }
 
-        if self.dragging_window.is_some() {
+        if let Some((window, _)) = self.dragging_window {
+            self.set_cursor(window, "left_ptr")?;
             self.dragging_window = None;
         }
-        if self.resizing_window.is_some() {
+        if let Some((window, _)) = self.resizing_window {
+            self.set_cursor(window, "left_ptr")?;
             self.resizing_window = None
         }
+        Ok(())
     }
 
     pub(crate) fn on_enter_notify(

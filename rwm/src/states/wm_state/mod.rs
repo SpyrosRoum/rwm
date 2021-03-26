@@ -7,6 +7,7 @@ use {
     anyhow::Context,
     x11rb::{
         connection::Connection,
+        cursor::Handle as CursorHandle,
         errors::ReplyOrIdError,
         protocol::{xproto::*, Event},
         rust_connection::RustConnection,
@@ -38,10 +39,16 @@ pub(crate) struct WmState<'a> {
     /// The tags that are currently visible
     pub(crate) tags: Vec<TagState>,
     pub(crate) layout: LayoutType,
+    pub(crate) cursor_handle: CursorHandle,
 }
 
 impl<'a> WmState<'a> {
-    pub(crate) fn new(conn: &'a RustConnection, screen_num: usize, config: Config) -> Self {
+    pub(crate) fn new(
+        conn: &'a RustConnection,
+        screen_num: usize,
+        config: Config,
+        cursor_handle: CursorHandle,
+    ) -> Self {
         let def_layout = config.layouts[0];
         // tags are 1-9 and the default is 1
         let mut tags: Vec<TagState> = (1..=9)
@@ -58,6 +65,7 @@ impl<'a> WmState<'a> {
             resizing_window: None,
             tags,
             layout: def_layout,
+            cursor_handle,
         }
     }
 
@@ -225,7 +233,7 @@ impl<'a> WmState<'a> {
         match event {
             Event::MapRequest(event) => self.manage_window(event.window)?,
             Event::ButtonPress(event) => self.on_button_press(event)?,
-            Event::ButtonRelease(event) => self.on_button_release(event),
+            Event::ButtonRelease(event) => self.on_button_release(event)?,
             Event::MotionNotify(event) => self.on_motion_notify(event)?,
             Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
             Event::EnterNotify(event) => self.on_enter_notify(event)?,
@@ -319,5 +327,20 @@ impl<'a> WmState<'a> {
             self.config.border_width,
             self.config.gap,
         )
+    }
+
+    /// A helper method for setting the cursor
+    pub(crate) fn set_cursor(
+        &self,
+        window: Window,
+        cursor_name: &str,
+    ) -> Result<(), ReplyOrIdError> {
+        self.conn.change_window_attributes(
+            window,
+            &ChangeWindowAttributesAux::new()
+                .cursor(self.cursor_handle.load_cursor(self.conn, cursor_name)?),
+        )?;
+
+        Ok(())
     }
 }

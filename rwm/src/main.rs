@@ -14,8 +14,10 @@ use {
     structopt::StructOpt,
     x11rb::{
         connection::Connection,
+        cursor::Handle as CursorHandle,
         errors::ReplyError,
         protocol::{xproto::*, ErrorKind, Event},
+        resource_manager::Database,
         rust_connection::RustConnection,
     },
 };
@@ -58,6 +60,13 @@ fn main() -> anyhow::Result<()> {
         RustConnection::connect(None).context("Failed to connect to the X server")?;
     let screen = &conn.setup().roots[screen_num];
 
+    // Open the resource database..
+    let resource_db =
+        Database::new_from_default(&conn).context("Failed to open X11 resource database")?;
+    // ..and request a cursor handle
+    let cursor_handle = CursorHandle::new(&conn, screen_num, &resource_db)
+        .context("Failed to make request to X11")?;
+
     if let Err(ReplyError::X11Error(error)) = try_become_wm(&conn, screen) {
         if error.error_kind == ErrorKind::Access {
             bail!("Another WM in already running.");
@@ -77,7 +86,17 @@ fn main() -> anyhow::Result<()> {
         bail!("There needs to be at least one layout in the config");
     }
 
-    let mut wm_state = WmState::new(&conn, screen_num, config);
+    // Let's get the actual cursor handle
+    let cursor_handle = cursor_handle.reply().context("An X11 error occurred")?;
+    // Set the cursor to the classic left pointer
+    conn.change_window_attributes(
+        screen.root,
+        &ChangeWindowAttributesAux::default()
+            .cursor(cursor_handle.load_cursor(&conn, "left_ptr").unwrap()),
+    )
+    .context("An X11 connection error occurred")?;
+
+    let mut wm_state = WmState::new(&conn, screen_num, config, cursor_handle);
     wm_state
         .scan_windows()
         .context("Error while looking for pre-existing windows")?;
