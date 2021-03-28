@@ -1,9 +1,6 @@
-use {
-    anyhow::anyhow,
-    x11rb::{errors::ReplyOrIdError, protocol::xproto::*},
-};
+use x11rb::{errors::ReplyOrIdError, protocol::xproto::*};
 
-use crate::{utils::clean_mask, WmState};
+use crate::{utils::clean_mask, utils::get_transient_for, WmState};
 
 impl<'a> WmState<'a> {
     pub(crate) fn on_button_press(
@@ -134,20 +131,7 @@ impl<'a> WmState<'a> {
         if let Some((idx, win_state)) = self.windows.find_by_id(event.window) {
             // Unfortunately I can't use match for event.atom and AtomEnum..
             if event.atom == Atom::from(AtomEnum::WM_TRANSIENT_FOR) {
-                let id = self
-                    .conn
-                    .get_property(
-                        false,
-                        win_state.id,
-                        AtomEnum::WM_TRANSIENT_FOR,
-                        AtomEnum::WINDOW,
-                        0,
-                        1,
-                    )?
-                    .reply()?
-                    .value32()
-                    .ok_or_else(|| anyhow!("Wrong format"))?
-                    .next();
+                let id = get_transient_for(&self.conn, win_state.id)?;
                 if id.is_none() {
                     // That's okay!
                     return Ok(());

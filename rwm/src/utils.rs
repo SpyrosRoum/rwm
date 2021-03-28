@@ -1,8 +1,11 @@
 use std::fs;
 
 use {
-    anyhow::{Context, Result},
-    x11rb::protocol::xproto::KeyButMask,
+    anyhow::{anyhow, Context, Result},
+    x11rb::{
+        protocol::xproto::{AtomEnum, ConnectionExt, KeyButMask, Window},
+        rust_connection::RustConnection,
+    },
 };
 
 use crate::states::{TagState, WinState};
@@ -37,4 +40,21 @@ pub(crate) fn visible(tags: &[TagState]) -> Vec<TagState> {
 pub(crate) fn is_visible(win: &WinState, tags: &[TagState]) -> bool {
     tags.iter()
         .any(|tag_state| tag_state.visible && win.tags.contains(&tag_state.id))
+}
+
+/// A help function to get the WM_TRANSIENT_FOR hint for the given window
+pub(crate) fn get_transient_for(conn: &RustConnection, win_id: Window) -> Result<Option<Window>> {
+    Ok(conn
+        .get_property(
+            false,
+            win_id,
+            AtomEnum::WM_TRANSIENT_FOR,
+            AtomEnum::WINDOW,
+            0,
+            1,
+        )?
+        .reply()?
+        .value32()
+        .ok_or_else(|| anyhow!("Wrong format"))?
+        .next())
 }

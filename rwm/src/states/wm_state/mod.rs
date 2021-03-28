@@ -219,6 +219,14 @@ impl<'a> WmState<'a> {
         // We also push at the front of the focus history because the window now has focus
         let mut window = WinState::new(window, &geom, self.tags.as_slice());
 
+        // If it's a transient window then copy parent's tags and make it floating
+        if let Ok(Some(id)) = utils::get_transient_for(&self.conn, window.id) {
+            if let Some((_, parent_window)) = self.windows.find_by_id(id) {
+                let _ = std::mem::replace(&mut window.tags, parent_window.tags.clone());
+                window.floating = true;
+            }
+        }
+
         // Apply the user defined rules about where the window should spawn
         self.apply_rules(&mut window)?;
 
