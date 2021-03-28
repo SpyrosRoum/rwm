@@ -189,17 +189,26 @@ impl<'a> WmState<'a> {
         let event_mask = u32::from(
             EventMask::BUTTON_PRESS | EventMask::BUTTON_RELEASE | EventMask::POINTER_MOTION,
         );
-        self.conn.grab_button(
-            false,
-            window,
-            event_mask as u16,
-            GrabMode::ASYNC,
-            GrabMode::ASYNC,
-            x11rb::NONE,
-            x11rb::NONE,
-            ButtonIndex::ANY,
-            ModMask::ANY,
-        )?;
+        let mod_key = u16::from(self.config.mod_key);
+        // We need to grab for our modifier key, for our mod key + numlock, mod + lock, and mod + numlock + lock
+        for mask in std::array::IntoIter::new([
+            0_u16,
+            ModMask::LOCK.into(),
+            ModMask::M2.into(), // ToDo `M2` might not always be numlock (see utils.rs as well)
+            u16::from(ModMask::LOCK) | u16::from(ModMask::M2),
+        ]) {
+            self.conn.grab_button(
+                false,
+                window,
+                event_mask as u16,
+                GrabMode::ASYNC,
+                GrabMode::SYNC,
+                x11rb::NONE,
+                x11rb::NONE,
+                ButtonIndex::ANY,
+                mod_key | mask,
+            )?;
+        }
 
         // Show the window
         self.conn.map_window(window)?;
