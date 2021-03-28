@@ -55,24 +55,21 @@ impl<'a> WmState<'a> {
                 self.windows.focus(Direction::Down, &self.tags);
             }
             WindowSubcommand::Send { tag_id } => {
-                // We want a mutable window state so we get it again as mut
-                if let Some(focused_window) = self.windows.get_focused_mut() {
-                    let tag_state = self.tags.iter().find(|tag_state| **tag_state == tag_id);
-                    let tag = match tag_state {
-                        Some(t) => t.id,
-                        None => tag_id,
-                    };
-                    focused_window.tags.clear();
-                    focused_window.tags.insert(tag);
-                }
+                // We want a mutable window state so we get it again as mut and we know it exists
+                let focused_window = self.windows.get_focused_mut().unwrap();
+                let tag_state = self.tags.iter().find(|tag_state| **tag_state == tag_id);
+                let tag = match tag_state {
+                    Some(t) => t.id,
+                    None => tag_id,
+                };
+                focused_window.tags.clear();
+                focused_window.tags.insert(tag);
                 self.windows.focus(Direction::Down, &self.tags);
             }
             WindowSubcommand::Focus(dir) => self.windows.focus(dir, &self.tags),
             WindowSubcommand::Shift(dir) => {
-                if let Some(id) = self.windows.get_focused().map(|win| win.id) {
-                    self.windows.shift(dir, &self.tags);
-                    self.windows.set_focused(id)
-                }
+                self.windows.shift(dir, &self.tags);
+                self.windows.focus(dir, &self.tags);
             }
             WindowSubcommand::Toggle(option) => match option {
                 WindowToggle::Float => {
@@ -83,7 +80,9 @@ impl<'a> WmState<'a> {
             },
         };
 
-        self.update_windows()
-            .with_context(|| format!("Failed to update windows after `Window({:?})`", sub))
+        self.update_windows().context(format!(
+            "Failed to update windows after `Window({:?})`",
+            sub
+        ))
     }
 }
