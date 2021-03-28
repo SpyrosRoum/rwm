@@ -31,10 +31,5 @@ The config file is currently changing a lot but here is how it looks like at the
 You might notice the unfamiliar syntax. It's called [RON](https://github.com/ron-rs/ron)
 
 ## To-do
-This is **not a viable window manager yet**, but it's coming together nicely.
-
-Here is a To-do list but more may need to be done:  
-- [ ] Multi-monitor support using RandR
-- [ ] Provide a dwm style bar that will read the root window's name. I'd like for this eventually to be optional and for it to be easy to use polybar or something else 
-- [ ] Better ICCCM/EWMH coverage. I plan to cover them as much as needed for a good experience
-- [ ] More layouts. Layouts are relatively easy to create, so if you want to implement one please make a PR
+This is **not a viable window manager yet**, but it's coming together nicely.  
+See [To-do](./TODO.md) for things that need to happen.
