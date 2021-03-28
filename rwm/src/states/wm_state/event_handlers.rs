@@ -26,6 +26,7 @@ impl<'a> WmState<'a> {
                 // Left click -> Move windows
                 let (x, y) = (-event.event_x, -event.event_y);
                 self.dragging_window = Some((window.id, (x, y)));
+                // We set the border_width in case it was previously the only window and it didn't have a border
                 self.conn.configure_window(
                     window.id,
                     &ConfigureWindowAux::new().border_width(self.config.border_width),
@@ -33,13 +34,11 @@ impl<'a> WmState<'a> {
                 self.set_cursor(event.event, "fleur")?;
             } else if event.detail == 3 && self.dragging_window.is_none() {
                 // Right click -> Resize window
-                let (dst_x, dst_y) = (
-                    window.x + window.width as i16,
-                    window.y + window.height as i16,
-                );
+                // dst_x and dst_y in warp_pointer is the offset from the window origin
+                let (dst_x, dst_y) = (window.width as i16, window.height as i16);
                 self.conn
                     .warp_pointer(x11rb::NONE, window.id, 0, 0, 0, 0, dst_x, dst_y)?;
-                self.resizing_window = Some((window.id, (dst_x, dst_y)));
+                self.resizing_window = Some((window.id, (dst_x + window.x, dst_y + window.y)));
                 self.set_cursor(event.event, "bottom_right_corner")?;
             }
         }
