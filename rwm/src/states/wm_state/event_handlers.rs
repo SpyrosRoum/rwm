@@ -147,9 +147,12 @@ impl<'a> WmState<'a> {
                     .reply()?
                     .value32()
                     .ok_or_else(|| anyhow!("Wrong format"))?
-                    .next()
-                    .ok_or_else(|| anyhow!("No value in reply"))?;
-                if self.windows.contains(id) {
+                    .next();
+                if id.is_none() {
+                    // That's okay!
+                    return Ok(());
+                }
+                if self.windows.contains(id.unwrap()) {
                     // We can unwrap because if it didn't exist we wouldn't be here
                     let win_state = self.windows.get_mut(idx).unwrap();
                     win_state.floating = true;
