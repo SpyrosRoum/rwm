@@ -7,6 +7,8 @@ impl<'a> WmState<'a> {
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
+        self.focus(event.event)?;
+
         // Left or Right mouse click
         if ![1, 3].contains(&event.detail) {
             return Ok(());
@@ -53,8 +55,13 @@ impl<'a> WmState<'a> {
             } else {
                 let (x, y) = (x + event.root_x, y + event.root_y);
                 let (x, y) = (x as i32, y as i32);
-                self.conn
-                    .configure_window(window, &ConfigureWindowAux::new().x(x).y(y))?;
+                self.conn.configure_window(
+                    window,
+                    &ConfigureWindowAux::new()
+                        .x(x)
+                        .y(y)
+                        .stack_mode(StackMode::ABOVE),
+                )?;
                 if let Some((_, win_state)) = self.windows.find_by_id_mut(window) {
                     win_state.floating = true;
                     win_state.x = x as i16;
@@ -76,7 +83,8 @@ impl<'a> WmState<'a> {
                     window,
                     &ConfigureWindowAux::new()
                         .width(new_w as u32)
-                        .height(new_h as u32),
+                        .height(new_h as u32)
+                        .stack_mode(StackMode::ABOVE),
                 )?;
                 self.resizing_window = Some((window, (event.root_x, event.root_y)));
                 win_state.width = new_w as u16;
@@ -118,8 +126,7 @@ impl<'a> WmState<'a> {
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
         if self.config.follow_cursor {
-            self.windows.set_focused(event.event);
-            self.update_windows()?;
+            self.focus(event.event)?;
         }
         Ok(())
     }

@@ -2,13 +2,13 @@ use std::fs;
 
 use {
     anyhow::{anyhow, Context, Result},
-    x11rb::{
-        protocol::xproto::{AtomEnum, ConnectionExt, KeyButMask, Window},
-        rust_connection::RustConnection,
-    },
+    x11rb::{errors::ReplyOrIdError, protocol::xproto::*, rust_connection::RustConnection},
 };
 
-use crate::states::{TagState, WinState};
+use crate::{
+    mod_mask::XModMask,
+    states::{TagState, WinState},
+};
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {
     // ToDo: I think num lock is not always Mod2, find a way to get that dynamically
@@ -57,4 +57,55 @@ pub(crate) fn get_transient_for(conn: &RustConnection, win_id: Window) -> Result
         .value32()
         .ok_or_else(|| anyhow!("Wrong format"))?
         .next())
+}
+
+pub(crate) fn grab_buttons(
+    conn: &RustConnection,
+    window: Window,
+    mod_key: XModMask,
+    focus: bool,
+) -> Result<(), ReplyOrIdError> {
+    conn.ungrab_button(ButtonIndex::ANY, window, ModMask::ANY)?;
+
+    // This ugly line is needed because grab_button expects something that implements Into<u16>
+    // but EventMask is u32
+    let event_mask =
+        u32::from(EventMask::BUTTON_PRESS | EventMask::BUTTON_RELEASE | EventMask::POINTER_MOTION);
+    let mod_key = u16::from(mod_key);
+    if focus {
+        // We need to grab for our modifier key, for our mod key + numlock, mod + lock, and mod + numlock + lock
+        for mask in std::array::IntoIter::new([
+            0_u16,
+            ModMask::LOCK.into(),
+            ModMask::M2.into(), // ToDo `M2` might not always be numlock (see utils.rs as well)
+            u16::from(ModMask::LOCK) | u16::from(ModMask::M2),
+        ]) {
+            conn.grab_button(
+                false,
+                window,
+                event_mask as u16,
+                GrabMode::ASYNC,
+                GrabMode::SYNC,
+                x11rb::NONE,
+                x11rb::NONE,
+                ButtonIndex::ANY,
+                mod_key | mask,
+            )?;
+        }
+    } else {
+        // Grab everything
+        conn.grab_button(
+            false,
+            window,
+            event_mask as u16,
+            GrabMode::ASYNC,
+            GrabMode::ASYNC,
+            x11rb::NONE,
+            x11rb::NONE,
+            ButtonIndex::ANY,
+            ModMask::ANY,
+        )?;
+    }
+
+    Ok(())
 }

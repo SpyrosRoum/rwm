@@ -161,10 +161,12 @@ impl<'a> WmState<'a> {
                 self.manage_window(win)?;
             }
         }
+        if let Some(new_focused) = self.windows.find_next(&self.tags).map(|(_, new)| new) {
+            let id = new_focused.id;
+            self.focus(id)?;
+        };
 
-        // Note: We don't call self.update_windows() or self.layout.update()
-        // because both get called in self.manage_window()
-        Ok(())
+        self.update_windows()
     }
 
     fn manage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
@@ -184,31 +186,7 @@ impl<'a> WmState<'a> {
             .check()?;
 
         // Get Button Press events
-        // This ugly line is needed because grab_button expects something that implements Into<u16>
-        // but EventMask is u32
-        let event_mask = u32::from(
-            EventMask::BUTTON_PRESS | EventMask::BUTTON_RELEASE | EventMask::POINTER_MOTION,
-        );
-        let mod_key = u16::from(self.config.mod_key);
-        // We need to grab for our modifier key, for our mod key + numlock, mod + lock, and mod + numlock + lock
-        for mask in std::array::IntoIter::new([
-            0_u16,
-            ModMask::LOCK.into(),
-            ModMask::M2.into(), // ToDo `M2` might not always be numlock (see utils.rs as well)
-            u16::from(ModMask::LOCK) | u16::from(ModMask::M2),
-        ]) {
-            self.conn.grab_button(
-                false,
-                window,
-                event_mask as u16,
-                GrabMode::ASYNC,
-                GrabMode::SYNC,
-                x11rb::NONE,
-                x11rb::NONE,
-                ButtonIndex::ANY,
-                mod_key | mask,
-            )?;
-        }
+        utils::grab_buttons(&self.conn, window, self.config.mod_key, false)?;
 
         // Show the window
         self.conn.map_window(window)?;
@@ -231,8 +209,7 @@ impl<'a> WmState<'a> {
         self.apply_rules(&mut window)?;
 
         self.windows.push_front(window);
-
-        self.update_windows()
+        Ok(())
     }
 
     /// Called when a window gets destroyed (DestroyNotify)
@@ -248,7 +225,11 @@ impl<'a> WmState<'a> {
     /// Handle events from the X server
     pub(crate) fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
         match event {
-            Event::MapRequest(event) => self.manage_window(event.window)?,
+            Event::MapRequest(event) => {
+                self.manage_window(event.window)?;
+                self.focus(event.window)?;
+                self.update_windows()?;
+            }
             Event::ButtonPress(event) => self.on_button_press(event)?,
             Event::ButtonRelease(event) => self.on_button_release(event)?,
             Event::MotionNotify(event) => self.on_motion_notify(event)?,
@@ -306,24 +287,13 @@ impl<'a> WmState<'a> {
         // Map the proper windows and unmap the rest
         for win in self.windows.iter() {
             if utils::is_visible(win, &self.tags) {
-                let attrs = ChangeWindowAttributesAux::default()
-                    .border_pixel(self.config.normal_border_color);
-                self.conn.change_window_attributes(win.id, &attrs)?;
                 self.conn.map_window(win.id)?;
             } else {
                 self.conn.unmap_window(win.id)?;
             }
         }
 
-        if let Some(focused) = self.windows.get_focused() {
-            // Give it the correct border color
-            let attrs =
-                ChangeWindowAttributesAux::default().border_pixel(self.config.focused_border_color);
-            self.conn.change_window_attributes(focused.id, &attrs)?;
-            // Give keyboard input to window
-            self.conn
-                .set_input_focus(InputFocus::NONE, focused.id, x11rb::CURRENT_TIME)?;
-        } else {
+        if self.windows.get_focused().is_none() {
             // Give input focus to root window, otherwise no input is possible
             let root = self.conn.setup().roots[self.screen_num].root;
             self.conn
@@ -357,6 +327,32 @@ impl<'a> WmState<'a> {
             &ChangeWindowAttributesAux::new()
                 .cursor(self.cursor_handle.load_cursor(self.conn, cursor_name)?),
         )?;
+
+        Ok(())
+    }
+
+    pub(crate) fn focus(&mut self, id: Window) -> Result<(), ReplyOrIdError> {
+        if let Some(old_focused) = self.windows.get_focused() {
+            if old_focused.id == id {
+                return Ok(());
+            }
+            utils::grab_buttons(&self.conn, old_focused.id, self.config.mod_key, false)?;
+
+            let attrs =
+                ChangeWindowAttributesAux::default().border_pixel(self.config.normal_border_color);
+            self.conn.change_window_attributes(old_focused.id, &attrs)?;
+        }
+
+        utils::grab_buttons(&self.conn, id, self.config.mod_key, true)?;
+        self.windows.set_focused(id);
+
+        // Give it the correct border color
+        let attrs =
+            ChangeWindowAttributesAux::default().border_pixel(self.config.focused_border_color);
+        self.conn.change_window_attributes(id, &attrs)?;
+        // Give keyboard input to window
+        self.conn
+            .set_input_focus(InputFocus::NONE, id, x11rb::CURRENT_TIME)?;
 
         Ok(())
     }

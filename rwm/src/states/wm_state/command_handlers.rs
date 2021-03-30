@@ -52,7 +52,7 @@ impl<'a> WmState<'a> {
                 self.conn
                     .destroy_window(focused_window.id)
                     .context("Failed to destroy the current window")?;
-                self.windows.focus(Direction::Down, &self.tags);
+                return self.on_window_cmd(WindowSubcommand::Focus(Direction::Down));
             }
             WindowSubcommand::Send { tag_id } => {
                 // We want a mutable window state so we get it again as mut and we know it exists
@@ -64,12 +64,32 @@ impl<'a> WmState<'a> {
                 };
                 focused_window.tags.clear();
                 focused_window.tags.insert(tag);
-                self.windows.focus(Direction::Down, &self.tags);
+
+                if let Some((_, new_focused)) = self.windows.find_next(&self.tags) {
+                    let id = new_focused.id;
+                    self.focus(id)?;
+                }
             }
-            WindowSubcommand::Focus(dir) => self.windows.focus(dir, &self.tags),
+            WindowSubcommand::Focus(dir) => {
+                let new_focused = match dir {
+                    Direction::Up => self
+                        .windows
+                        .find_prev(&self.tags)
+                        .map(|(_, new_focused)| new_focused),
+                    Direction::Down => self
+                        .windows
+                        .find_next(&self.tags)
+                        .map(|(_, new_focused)| new_focused),
+                };
+
+                if let Some(new_focused) = new_focused {
+                    let id = new_focused.id;
+                    self.focus(id)?;
+                }
+            }
             WindowSubcommand::Shift(dir) => {
                 self.windows.shift(dir, &self.tags);
-                self.windows.focus(dir, &self.tags);
+                return self.on_window_cmd(WindowSubcommand::Focus(dir));
             }
             WindowSubcommand::Toggle(option) => match option {
                 WindowToggle::Float => {

@@ -50,17 +50,11 @@ impl FocusHist {
             .filter(move |win| tags.iter().any(|tag| win.tags.contains(tag)))
     }
 
-    /// Adds a WinState to front of the history and gives it focus.
-    /// If the history did not have this value present, true is returned.
-    /// If the history did have this value present, false is returned.
-    pub(crate) fn push_front(&mut self, value: WinState) -> bool {
-        if let Some(pos) = self.windows.iter().position(|win| win == &value) {
-            self.cur = Some(pos);
-            false
-        } else {
-            self.cur = Some(0);
-            self.windows.push_front(value);
-            true
+    /// Adds a WinState to front of the history without giving it focus.
+    pub(crate) fn push_front(&mut self, value: WinState) {
+        self.windows.push_front(value);
+        if let Some(cur) = self.cur {
+            self.cur = Some(cur + 1);
         }
     }
 
@@ -143,30 +137,33 @@ impl FocusHist {
     }
 
     /// Find the next (as in Direction::Down) visible window
-    fn find_next(&self, tags: &[TagState]) -> Option<usize> {
+    pub(crate) fn find_next(&self, tags: &[TagState]) -> Option<(usize, &WinState)> {
         if let Some(cur) = self.cur {
             let next = self
                 .windows
                 .iter()
                 .skip(cur + 1)
-                .position(|win| utils::is_visible(win, tags));
+                .enumerate()
+                .find(|(_, win)| utils::is_visible(win, tags));
 
             match next {
-                Some(n) => Some(n + cur + 1),
+                Some((n, win)) => Some((n + cur + 1, win)),
                 None => self
                     .windows
                     .iter()
-                    .position(|win| utils::is_visible(win, tags)),
+                    .enumerate()
+                    .find(|(_, win)| utils::is_visible(win, tags)),
             }
         } else {
             self.windows
                 .iter()
-                .position(|win| utils::is_visible(win, tags))
+                .enumerate()
+                .find(|(_, win)| utils::is_visible(win, tags))
         }
     }
 
     /// Find the previous (as in Direction::Up) visible window
-    fn find_prev(&self, tags: &[TagState]) -> Option<usize> {
+    pub(crate) fn find_prev(&self, tags: &[TagState]) -> Option<(usize, &WinState)> {
         let take_rev = |n: usize| self.windows.iter().enumerate().take(n).rev();
         let take_all_rev = || take_rev(self.windows.len());
 
@@ -174,23 +171,14 @@ impl FocusHist {
             .map_or_else(take_all_rev, take_rev)
             .find(|(_, win)| utils::is_visible(win, tags))
             .or_else(|| take_all_rev().find(|(_, win)| utils::is_visible(win, tags)))
-            .map(|(i, _)| i)
-    }
-
-    /// Give focus to the next/previous window with the correct tags
-    pub(crate) fn focus(&mut self, dir: Direction, tags: &[TagState]) {
-        match dir {
-            Direction::Up => self.cur = self.find_prev(tags),
-            Direction::Down => self.cur = self.find_next(tags),
-        };
     }
 
     /// Move the current window up or down, focus doesn't follow
     pub(crate) fn shift(&mut self, dir: Direction, tags: &[TagState]) {
         if let Some(cur) = self.cur {
             let next_pos = match dir {
-                Direction::Up => self.find_prev(tags),
-                Direction::Down => self.find_next(tags),
+                Direction::Up => self.find_prev(tags).map(|(i, _)| i),
+                Direction::Down => self.find_next(tags).map(|(i, _)| i),
             }
             .unwrap(); // There is at least one window so we can unwrap safely
             self.windows.swap(cur, next_pos);
