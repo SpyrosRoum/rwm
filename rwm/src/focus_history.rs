@@ -58,44 +58,31 @@ impl FocusHist {
         }
     }
 
-    /// "Forget" a window and update self.cur to reflect the change
-    pub(crate) fn forget(&mut self, win_id: Window, tags: &[TagState]) {
-        let pos = self.windows.iter().position(|win| win.id == win_id);
-
-        if pos.is_none() {
-            return;
-        }
-        let pos = pos.unwrap();
+    /// "Forget" a window and return the next window that should get focus
+    /// Warning: self.cur points to None after this
+    pub(crate) fn forget(&mut self, win_id: Window, tags: &[TagState]) -> Option<&WinState> {
+        let pos = self.windows.iter().position(|win| win.id == win_id)?;
 
         self.windows.remove(pos);
         if self.windows.is_empty() {
-            self.cur = None;
-            return;
+            return None;
         }
 
-        if self.cur.is_none() {
-            return;
-        }
-        let cur = self.cur.unwrap();
+        let cur = self.cur?;
+        self.cur = None;
+
         // We need to change the position of self.cur or it will be outdated
         match pos.cmp(&cur) {
-            Ordering::Less => self.cur = Some(cur - 1),
-            Ordering::Greater => { /* We don't need to do anything here */ }
+            Ordering::Less => Some(&self.windows[cur - 1]),
+            Ordering::Greater => Some(&self.windows[cur]),
             Ordering::Equal => {
-                // Basically what we do in self.focus_next()
-                let next = self
+                // Basically what we do in self.find_next()
+                self
                     .windows
                     .iter()
                     .skip(cur)
-                    .position(|win| utils::is_visible(win, tags));
-
-                self.cur = match next {
-                    Some(v) => Some(v + cur),
-                    None => self
-                        .windows
-                        .iter()
-                        .position(|win| utils::is_visible(win, tags)),
-                };
+                    .chain(self.windows.iter())
+                    .find(|win| utils::is_visible(win, tags))
             }
         }
     }
@@ -142,8 +129,8 @@ impl FocusHist {
             let next = self
                 .windows
                 .iter()
-                .skip(cur + 1)
                 .enumerate()
+                .skip(cur + 1)
                 .find(|(_, win)| utils::is_visible(win, tags));
 
             match next {

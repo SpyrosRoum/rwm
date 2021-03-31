@@ -215,10 +215,15 @@ impl<'a> WmState<'a> {
     /// Called when a window gets destroyed (DestroyNotify)
     fn unmanage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
         self.conn.unmap_window(window)?;
+
+        if let Some(new_focused) = self.windows.forget(window, self.tags.as_slice()) {
+            let id = new_focused.id;
+            self.focus(id)?;
+        }
+
         self.conn
             .ungrab_button(ButtonIndex::ANY, window, ModMask::ANY)?;
 
-        self.windows.forget(window, self.tags.as_slice());
         self.update_windows()
     }
 
