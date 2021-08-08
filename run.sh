@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+set -euxo pipefail
+
 cargo build
 
 # NOTE: Resizing doesn't work correctly in Xephyr,
