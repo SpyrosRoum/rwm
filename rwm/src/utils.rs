@@ -26,8 +26,8 @@ pub(crate) fn clean_mask(mask: u16) -> u16 {
 }
 
 pub(crate) fn clean_up() -> Result<()> {
-    fs::remove_file("/tmp/rwm.sock").context("Failed to remove socket")?;
-
+    // Socket is being deleted on Drop implementation for WmState so there is nothing to do here
+    // Stays for potentially future use
     Ok(())
 }
 

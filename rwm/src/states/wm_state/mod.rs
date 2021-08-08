@@ -362,3 +362,10 @@ impl<'a> WmState<'a> {
         Ok(())
     }
 }
+
+impl<'a> Drop for WmState<'a> {
+    fn drop(&mut self) {
+        // This is done here instead of the `utils::clean_up` so that it will run on a panic too
+        let _ = std::fs::remove_file("/tmp/rwm.sock");
+    }
+}
