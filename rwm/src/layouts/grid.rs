@@ -5,14 +5,14 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use crate::focus_history::FocusHist;
+use crate::{focus_history::FocusHist, rect::Rect};
 use common::TagId;
 
 pub(crate) fn update(
     conn: &RustConnection,
     focus: &mut FocusHist,
     tags: Vec<TagId>,
-    screen_num: usize,
+    rect: &Rect,
     border_width: u32,
     gap: u32,
 ) -> Result<(), ReplyOrIdError> {
@@ -22,8 +22,8 @@ pub(crate) fn update(
         .filter(|win| !win.floating)
         .collect::<Vec<_>>();
 
-    let width = conn.setup().roots[screen_num].width_in_pixels as u32;
-    let height = conn.setup().roots[screen_num].height_in_pixels as u32;
+    let width = rect.width as u32;
+    let height = rect.height as u32;
 
     if windows.is_empty() {
         return Ok(());
@@ -32,8 +32,8 @@ pub(crate) fn update(
         conn.configure_window(
             win.id,
             &ConfigureWindowAux::new()
-                .x(0)
-                .y(0)
+                .x(rect.x as i32)
+                .y(rect.y as i32)
                 .border_width(0)
                 .width(width)
                 .height(height),
@@ -51,12 +51,12 @@ pub(crate) fn update(
     let ww = win_width - (border_width * 2) - gap * 2;
     let wh = win_height - (border_width * 2) - gap * 2;
     for (i, win) in windows.iter_mut().enumerate() {
-        let y = if i == 0 {
+        let y = (if i == 0 {
             gap
         } else {
             win_height * (i / 2) as u32 + gap
-        } as i32;
-        let x = if i % 2 == 0 { gap } else { win_width + gap } as i32;
+        } + rect.y as u32) as i32;
+        let x = (if i % 2 == 0 { gap } else { win_width + gap } as i32) + rect.x as i32;
 
         let config = ConfigureWindowAux::new()
             .x(x)

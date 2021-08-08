@@ -6,10 +6,10 @@ use {
     x11rb::{connection::Connection, errors::ReplyOrIdError, rust_connection::RustConnection},
 };
 
-use crate::focus_history::FocusHist;
+use crate::{focus_history::FocusHist, rect::Rect};
 use common::TagId;
 
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub(crate) enum LayoutType {
     MonadTall,
     Grid,
@@ -22,16 +22,14 @@ impl LayoutType {
         conn: &RustConnection,
         focus: &mut FocusHist,
         tags: Vec<TagId>,
-        screen_num: usize,
+        rect: &Rect,
         border_width: u32,
         gap: u32,
     ) -> Result<(), ReplyOrIdError> {
         match self {
-            LayoutType::MonadTall => {
-                monad_tall::update(conn, focus, tags, screen_num, border_width, gap)
-            }
+            LayoutType::MonadTall => monad_tall::update(conn, focus, tags, rect, border_width, gap),
             LayoutType::Floating => Ok(()), // We don't have anything to do
-            LayoutType::Grid => grid::update(conn, focus, tags, screen_num, border_width, gap),
+            LayoutType::Grid => grid::update(conn, focus, tags, rect, border_width, gap),
         }?;
         conn.flush()?;
         Ok(())

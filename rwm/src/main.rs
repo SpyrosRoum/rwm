@@ -3,6 +3,7 @@ mod config;
 mod focus_history;
 mod layouts;
 mod mod_mask;
+mod rect;
 mod spawn_rule;
 mod states;
 mod utils;
@@ -96,7 +97,7 @@ fn main() -> anyhow::Result<()> {
     )
     .context("An X11 connection error occurred")?;
 
-    let mut wm_state = WmState::new(&conn, screen_num, config, cursor_handle);
+    let mut wm_state = WmState::new(&conn, screen_num, config, cursor_handle)?;
     wm_state
         .scan_windows()
         .context("Error while looking for pre-existing windows")?;

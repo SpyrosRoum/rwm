@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use crate::layouts::LayoutType;
 use common::{TagId, TagValueError};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq)]
 pub(crate) struct TagState {
     pub(crate) id: TagId,
     pub(crate) visible: bool,

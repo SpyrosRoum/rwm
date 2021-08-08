@@ -1,13 +1,19 @@
-use std::fs;
-
 use {
     anyhow::{anyhow, Context, Result},
-    x11rb::{errors::ReplyOrIdError, protocol::xproto::*, rust_connection::RustConnection},
+    oorandom::Rand32,
+    x11rb::{
+        connection::Connection as _,
+        errors::ReplyOrIdError,
+        protocol::{randr, xproto::*},
+        rust_connection::RustConnection,
+    },
 };
 
 use crate::{
+    config::Config,
     mod_mask::XModMask,
-    states::{TagState, WinState},
+    rect::Rect,
+    states::{Monitor, TagState, WinState},
 };
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {
@@ -108,4 +114,29 @@ pub(crate) fn grab_buttons(
     }
 
     Ok(())
+}
+
+pub(crate) fn get_monitors(
+    conn: &RustConnection,
+    config: &Config,
+    screen_num: usize,
+    mut rng: &mut Rand32,
+) -> Result<Vec<Monitor>> {
+    let screen = &conn.setup().roots[screen_num];
+    // Todo: Should check randr version? https://github.com/linebender/druid/pull/1804/files#diff-887fa9b9ca679a0017ce71c83d9be00af81b30d94c20f2430ffac6caa2fc3531R74
+
+    Ok(randr::get_monitors(conn, screen.root, true)
+        .context("Failed to get monitors from randr")?
+        .reply()
+        .context("Failed to get monitors from randr")?
+        .monitors
+        .iter()
+        .map(|info| {
+            Monitor::new(
+                config,
+                &mut rng,
+                Rect::new(info.x, info.y, info.width, info.height),
+            )
+        })
+        .collect())
 }

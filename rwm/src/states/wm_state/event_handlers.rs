@@ -1,4 +1,6 @@
-use x11rb::{errors::ReplyOrIdError, protocol::xproto::*};
+use std::mem;
+
+use x11rb::{errors::ReplyOrIdError, protocol::xproto::*, connection::Connection};
 
 use crate::{utils::clean_mask, utils::get_transient_for, WmState};
 
@@ -7,6 +9,11 @@ impl<'a> WmState<'a> {
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
+        let screen = &self.conn.setup().roots[self.screen_num];
+        if event.event == screen.root {
+            return Ok(());
+        }
+
         self.focus(event.event)?;
 
         // Left or Right mouse click
@@ -19,7 +26,9 @@ impl<'a> WmState<'a> {
             return Ok(());
         }
 
-        if let Some((_, mut window)) = self.windows.find_by_id_mut(event.event) {
+        // We handle changing `self.cur_monitor` in `motion_notify` so we can assume that the mouse
+        // is in the currently focused monitor
+        if let Some((_, mut window)) = self.cur_monitor.windows.find_by_id_mut(event.event) {
             window.floating = true;
             if event.detail == 1 && self.resizing_window.is_none() {
                 // Left click -> Move windows
@@ -49,6 +58,31 @@ impl<'a> WmState<'a> {
         event: MotionNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
         let mut should_update = false;
+
+        if !self.cur_monitor.contains_point(event.root_x, event.root_y) {
+            should_update = true;
+            let (new_mon_idx, new_mon) = self
+                .monitors
+                .iter_mut()
+                .enumerate()
+                .find(|(_i, mon)| mon.contains_point(event.root_x, event.root_y))
+                .expect("Can't move outside of monitors");
+
+            if let Some((win_id, _)) = self.dragging_window {
+                let (win, new) = self.cur_monitor.forget(win_id);
+                if let Some(new) = new {
+                    let id = new.id;
+                    self.cur_monitor.windows.set_focused(id);
+                }
+                let win = win.expect("It certainly exists");
+                let id = win.id;
+                new_mon.windows.push_front(win);
+                new_mon.windows.set_focused(id);
+            }
+
+            mem::swap(&mut self.cur_monitor, &mut self.monitors[new_mon_idx]);
+        }
+
         if let Some((window, (x, y))) = self.dragging_window {
             if event.event != window {
                 return Ok(());
@@ -62,7 +96,7 @@ impl<'a> WmState<'a> {
                         .y(y)
                         .stack_mode(StackMode::ABOVE),
                 )?;
-                if let Some((_, win_state)) = self.windows.find_by_id_mut(window) {
+                if let Some((_, win_state)) = self.cur_monitor.windows.find_by_id_mut(window) {
                     win_state.floating = true;
                     win_state.x = x as i16;
                     win_state.y = y as i16;
@@ -72,7 +106,7 @@ impl<'a> WmState<'a> {
         } else if let Some((window, (og_x, og_y))) = self.resizing_window {
             if event.event != window {
                 return Ok(());
-            } else if let Some((_, win_state)) = self.windows.find_by_id_mut(window) {
+            } else if let Some((_, win_state)) = self.cur_monitor.windows.find_by_id_mut(window) {
                 win_state.floating = true;
                 let (dif_w, dif_h) = ((event.root_x - og_x) as i32, (event.root_y - og_y) as i32);
                 let (new_w, new_h) = (
@@ -135,19 +169,28 @@ impl<'a> WmState<'a> {
         if event.state == Property::DELETE {
             return Ok(());
         }
-        if let Some((idx, win_state)) = self.windows.find_by_id(event.window) {
-            // Unfortunately I can't use match for event.atom and AtomEnum..
-            if event.atom == Atom::from(AtomEnum::WM_TRANSIENT_FOR) {
-                let id = get_transient_for(&self.conn, win_state.id)?;
-                if id.is_none() {
-                    // That's okay!
-                    return Ok(());
-                }
-                if self.windows.contains(id.unwrap()) {
-                    // We can unwrap because if it didn't exist we wouldn't be here
-                    let win_state = self.windows.get_mut(idx).unwrap();
-                    win_state.floating = true;
-                }
+
+        let win = self
+            .iter_windows()
+            .enumerate()
+            .find(|(_i, w)| w.id == event.window);
+        if win.is_none() {
+            return Ok(());
+        }
+        let (index, win_state) = win.unwrap();
+
+        // Unfortunately I can't use match for event.atom and AtomEnum..
+        if event.atom == Atom::from(AtomEnum::WM_TRANSIENT_FOR) {
+            let id = get_transient_for(self.conn, win_state.id)?;
+            if id.is_none() {
+                // That's okay!
+                return Ok(());
+            }
+            let id = id.unwrap();
+            if self.iter_windows().any(|win| win.id == id) {
+                // We can unwrap because if it didn't exist we wouldn't be here
+                let win_state = self.iter_windows_mut().nth(index).unwrap();
+                win_state.floating = true;
             }
         }
 

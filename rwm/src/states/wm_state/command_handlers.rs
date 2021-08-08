@@ -10,40 +10,34 @@ impl<'a> WmState<'a> {
     pub(crate) fn on_tag_cmd(&mut self, sub: TagSubcommand) -> Result<()> {
         match sub {
             TagSubcommand::Toggle { tag_id } => {
-                let one_vis = visible(&self.tags).len() == 1;
-                if let Some(mut tag_state) =
-                    self.tags.iter_mut().find(|tag_state| **tag_state == tag_id)
+                let one_vis = visible(&self.cur_monitor.tags).len() == 1;
+                if let Some(mut tag_state) = self
+                    .cur_monitor
+                    .tags
+                    .iter_mut()
+                    .find(|tag_state| **tag_state == tag_id)
                 {
                     if tag_state.visible && one_vis {
+                        // There is only one visible tag so we can't make that invisible too
                         return Ok(());
                     }
                     tag_state.visible = !tag_state.visible;
                 }
-
-                self.windows.reset_focus(&self.tags);
             }
             TagSubcommand::Switch { tag_id } => {
-                for tag_state in self.tags.iter_mut() {
-                    if *tag_state == tag_id {
-                        tag_state.visible = true;
-                        self.layout = tag_state.layout;
-                    } else {
-                        tag_state.visible = false;
-                    }
-                }
-
-                self.windows.reset_focus(&self.tags);
+                self.cur_monitor.switch_tag(tag_id);
             }
         };
+        self.cur_monitor.reset_focus();
 
         self.update_windows()
             .with_context(|| format!("Failed to update windows after `Tag({:?})`", sub))
     }
 
     pub(crate) fn on_window_cmd(&mut self, sub: WindowSubcommand) -> Result<()> {
-        let focused_window = self.windows.get_focused();
+        let focused_window = self.cur_monitor.windows.get_focused();
         if focused_window.is_none() {
-            // there are no windows so just do nothing
+            // There is no focused window so just do nothing
             return Ok(());
         }
         let focused_window = focused_window.unwrap();
@@ -56,8 +50,12 @@ impl<'a> WmState<'a> {
             }
             WindowSubcommand::Send { tag_id } => {
                 // We want a mutable window state so we get it again as mut and we know it exists
-                let focused_window = self.windows.get_focused_mut().unwrap();
-                let tag_state = self.tags.iter().find(|tag_state| **tag_state == tag_id);
+                let focused_window = self.cur_monitor.windows.get_focused_mut().unwrap();
+                let tag_state = self
+                    .cur_monitor
+                    .tags
+                    .iter()
+                    .find(|tag_state| **tag_state == tag_id);
                 let tag = match tag_state {
                     Some(t) => t.id,
                     None => tag_id,
@@ -65,21 +63,15 @@ impl<'a> WmState<'a> {
                 focused_window.tags.clear();
                 focused_window.tags.insert(tag);
 
-                if let Some((_, new_focused)) = self.windows.find_next(&self.tags) {
+                if let Some(new_focused) = self.cur_monitor.get_next_win() {
                     let id = new_focused.id;
                     self.focus(id)?;
                 }
             }
             WindowSubcommand::Focus(dir) => {
                 let new_focused = match dir {
-                    Direction::Up => self
-                        .windows
-                        .find_prev(&self.tags)
-                        .map(|(_, new_focused)| new_focused),
-                    Direction::Down => self
-                        .windows
-                        .find_next(&self.tags)
-                        .map(|(_, new_focused)| new_focused),
+                    Direction::Up => self.cur_monitor.get_prev_win(),
+                    Direction::Down => self.cur_monitor.get_next_win(),
                 };
 
                 if let Some(new_focused) = new_focused {
@@ -88,12 +80,12 @@ impl<'a> WmState<'a> {
                 }
             }
             WindowSubcommand::Shift(dir) => {
-                self.windows.shift(dir, &self.tags);
+                self.cur_monitor.shift_windows(dir);
                 return self.on_window_cmd(WindowSubcommand::Focus(dir));
             }
             WindowSubcommand::Toggle(option) => match option {
                 WindowToggle::Float => {
-                    if let Some(focused_window) = self.windows.get_focused_mut() {
+                    if let Some(focused_window) = self.cur_monitor.windows.get_focused_mut() {
                         focused_window.floating = !focused_window.floating;
                     }
                 }

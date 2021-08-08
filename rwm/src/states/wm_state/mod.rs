@@ -1,10 +1,11 @@
 mod command_handlers;
 mod event_handlers;
 
-use std::{collections::HashSet, os::unix::net::UnixStream};
+use std::{collections::HashSet, iter, mem, os::unix::net::UnixStream};
 
 use {
     anyhow::Context,
+    oorandom::Rand32,
     x11rb::{
         connection::Connection,
         cursor::Handle as CursorHandle,
@@ -16,12 +17,10 @@ use {
 
 use crate::{
     config::Config,
-    focus_history::FocusHist,
-    layouts::LayoutType,
-    states::{TagState, WinState},
+    states::{Monitor, WinState},
     utils,
 };
-use common::{Command, ConfigSubcommand, LayoutSubcommand};
+use common::{Command, ConfigSubcommand};
 
 #[derive(Debug)]
 pub(crate) struct WmState<'a> {
@@ -29,17 +28,22 @@ pub(crate) struct WmState<'a> {
     pub(crate) config: Config,
     screen_num: usize,
     pub(crate) running: bool,
-    /// A vecDequeue with all windows that acts as a focus history as well
-    pub(crate) windows: FocusHist,
+
+    /// A `Vec` that holds all the monitors except for the one currently focused
+    pub(crate) monitors: Vec<Monitor>,
+    /// The currently focused monitor
+    pub(crate) cur_monitor: Monitor,
+
     /// If this is Some, we are currently dragging the given window with the given offset relative
     /// to the mouse.
     pub(crate) dragging_window: Option<(Window, (i16, i16))>,
     /// Same as `dragging_window` but for resizing.
     pub(crate) resizing_window: Option<(Window, (i16, i16))>,
-    /// The tags that are currently visible
-    pub(crate) tags: Vec<TagState>,
-    pub(crate) layout: LayoutType,
+
     pub(crate) cursor_handle: CursorHandle,
+
+    /// PRNG used for monitor ids
+    rng: Rand32,
 }
 
 impl<'a> WmState<'a> {
@@ -48,25 +52,52 @@ impl<'a> WmState<'a> {
         screen_num: usize,
         config: Config,
         cursor_handle: CursorHandle,
-    ) -> Self {
-        let def_layout = config.layouts[0];
-        // tags are 1-9 and the default is 1
-        let mut tags: Vec<TagState> = (1..=9)
-            .map(|i| TagState::new(i, false, def_layout).unwrap())
-            .collect();
-        tags[0].visible = true;
-        Self {
+    ) -> anyhow::Result<Self> {
+        // With seed = 42 at least the first million are unique so I think we should be good
+        let mut rng = Rand32::new(42);
+        // let mut monitors = utils::get_monitors(conn, &config, screen_num, &mut rng)?;
+        let mut monitors = vec![
+            Monitor::new(&config, &mut rng, crate::rect::Rect::new(0, 0, 960, 1080)),
+            Monitor::new(&config, &mut rng, crate::rect::Rect::new(960, 0, 960, 1080)),
+        ];
+
+        std::fs::write("/home/spyros/rwm.log", format!("{:#?}", monitors)).ok();
+
+        // ToDo: Should it work with no monitors as well?
+        let cur_monitor = monitors
+            .pop()
+            .expect("There should be at least one monitor");
+
+        Ok(Self {
             conn,
             config,
             screen_num,
             running: true,
-            windows: FocusHist::new(),
+            monitors,
+            cur_monitor,
             dragging_window: None,
             resizing_window: None,
-            tags,
-            layout: def_layout,
             cursor_handle,
-        }
+            rng,
+        })
+    }
+
+    pub(crate) fn iter_mons(&self) -> impl Iterator<Item = &Monitor> {
+        self.monitors.iter().chain(iter::once(&self.cur_monitor))
+    }
+
+    pub(crate) fn iter_mons_mut(&mut self) -> impl Iterator<Item = &mut Monitor> {
+        self.monitors
+            .iter_mut()
+            .chain(iter::once(&mut self.cur_monitor))
+    }
+
+    pub(crate) fn iter_windows(&self) -> impl Iterator<Item = &WinState> {
+        self.iter_mons().map(|m| m.windows.iter()).flatten()
+    }
+
+    pub(crate) fn iter_windows_mut(&mut self) -> impl Iterator<Item = &mut WinState> {
+        self.iter_mons_mut().map(|m| m.windows.iter_mut()).flatten()
     }
 
     /// Apply user defined rules on the given window (ex put it in tag 2 by default)
@@ -161,7 +192,7 @@ impl<'a> WmState<'a> {
                 self.manage_window(win)?;
             }
         }
-        if let Some(new_focused) = self.windows.find_next(&self.tags).map(|(_, new)| new) {
+        if let Some(new_focused) = self.cur_monitor.get_next_win() {
             let id = new_focused.id;
             self.focus(id)?;
         };
@@ -186,29 +217,60 @@ impl<'a> WmState<'a> {
             .check()?;
 
         // Get Button Press events
-        utils::grab_buttons(&self.conn, window, self.config.mod_key, false)?;
+        utils::grab_buttons(self.conn, window, self.config.mod_key, false)?;
 
         // Show the window
         self.conn.map_window(window)?;
 
         let geom = self.conn.get_geometry(window)?.reply()?;
 
+        // Chances are it is located in our current monitor so we check that first
+        let mon = if self.cur_monitor.contains_point(geom.x, geom.y) {
+            &self.cur_monitor
+        } else {
+            // I assume either the window will exist in a monitor or it will be drugged somewhere out of
+            // screen
+            // Note: We don't chain the current monitor because we already checked that
+
+            // ToDo: We can be a lot smarter about the second case (ie check if the x is in the second monitor but the y is above, etc)
+            // Though is this even necessary/possible? Maybe on first scan only?
+            if let Some(mon) = self
+                .monitors
+                .iter()
+                .find(|m| m.contains_point(geom.x, geom.y))
+            {
+                mon
+            } else {
+                self.iter_mons()
+                    .find(|m| m.contains_point(0, 0))
+                    .expect("Origin must exist in monitor")
+            }
+        };
+
         // We give a reference to the tags so the window can deduce what tags are currently visible.
         // We also push at the front of the focus history because the window now has focus
-        let mut window = WinState::new(window, &geom, self.tags.as_slice());
+        let mut window = WinState::new(window, &geom, mon.tags.as_slice());
 
         // If it's a transient window then copy parent's tags and make it floating
-        if let Ok(Some(id)) = utils::get_transient_for(&self.conn, window.id) {
-            if let Some((_, parent_window)) = self.windows.find_by_id(id) {
+        if let Ok(Some(id)) = utils::get_transient_for(self.conn, window.id) {
+            if let Some(parent_window) = self.iter_windows().find(|win| win.id == id) {
                 let _ = std::mem::replace(&mut window.tags, parent_window.tags.clone());
                 window.floating = true;
             }
         }
 
+        // We cannot curry `mon` under `self.apply_rules` because we need to borrow `self` mutably
+        let mon_id = mon.id;
+
         // Apply the user defined rules about where the window should spawn
         self.apply_rules(&mut window)?;
 
-        self.windows.push_front(window);
+        // We need it mutable now
+        let mon = self
+            .iter_mons_mut()
+            .find(|m| *m == &mon_id)
+            .expect("It has to exist");
+        mon.windows.push_front(window);
         Ok(())
     }
 
@@ -216,9 +278,20 @@ impl<'a> WmState<'a> {
     fn unmanage_window(&mut self, window: Window) -> Result<(), ReplyOrIdError> {
         self.conn.unmap_window(window)?;
 
-        if let Some(new_focused) = self.windows.forget(window, self.tags.as_slice()) {
-            let id = new_focused.id;
-            self.focus(id)?;
+        if self.cur_monitor.contains_window(window) {
+            if let (_, Some(new_focused)) = self.cur_monitor.forget(window) {
+                let id = new_focused.id;
+                self.focus(id)?;
+            }
+        } else {
+            let mon = self.monitors.iter_mut().find(|m| m.contains_window(window));
+            // It's possible the id is not anywhere so we have to check
+            if let Some(mon) = mon {
+                if let (_, Some(new)) = mon.forget(window) {
+                    let id = new.id;
+                    mon.windows.set_focused(id);
+                }
+            }
         }
 
         self.conn
@@ -263,10 +336,8 @@ impl<'a> WmState<'a> {
             Command::Tag(sub) => self.on_tag_cmd(sub)?,
             Command::Window(sub) => self.on_window_cmd(sub)?,
             Command::Layout(sub) => {
-                self.layout = match sub {
-                    LayoutSubcommand::Next => self.layout.next(&self.config.layouts),
-                    LayoutSubcommand::Prev => self.layout.prev(&self.config.layouts),
-                };
+                self.cur_monitor
+                    .change_layout(&sub, self.config.layouts.as_slice());
                 self.update_windows().with_context(|| {
                     format!("Failed to update windows after `Layout({:?})`", sub)
                 })?
@@ -289,39 +360,37 @@ impl<'a> WmState<'a> {
     pub(crate) fn update_windows(&mut self) -> Result<(), ReplyOrIdError> {
         // Should this be replaced entirely by layout.update()?
 
-        // Map the proper windows and unmap the rest
-        for win in self.windows.iter() {
-            if utils::is_visible(win, &self.tags) {
-                self.conn.map_window(win.id)?;
-            } else {
-                self.conn.unmap_window(win.id)?;
+        for mon in self.iter_mons() {
+            // Map the proper windows and unmap the rest
+            for win in mon.windows.iter() {
+                if utils::is_visible(win, mon.tags.as_slice()) {
+                    self.conn.map_window(win.id)?;
+                } else {
+                    self.conn.unmap_window(win.id)?;
+                }
             }
         }
 
-        if self.windows.get_focused().is_none() {
+        // Using `self.iter_mons_mut()` doesn't compile
+        for mon in self
+            .monitors
+            .iter_mut()
+            .chain(iter::once(&mut self.cur_monitor))
+        {
+            mon.update_layout(self.conn, &self.config)?;
+        }
+
+        if self.cur_monitor.windows.get_focused().is_none() {
             // Give input focus to root window, otherwise no input is possible
             let root = self.conn.setup().roots[self.screen_num].root;
             self.conn
                 .set_input_focus(InputFocus::NONE, root, x11rb::CURRENT_TIME)?;
         }
 
-        let visible_tags = self
-            .tags
-            .iter()
-            .filter(|tag_state| tag_state.visible)
-            .map(|tag_state| tag_state.id)
-            .collect::<Vec<_>>();
-        self.layout.update(
-            &self.conn,
-            &mut self.windows,
-            visible_tags,
-            self.screen_num,
-            self.config.border_width,
-            self.config.gap,
-        )
+        Ok(())
     }
 
-    /// A helper method for setting the cursor
+    /// A helper method for setting the cursor for a window
     pub(crate) fn set_cursor(
         &self,
         window: Window,
@@ -337,19 +406,31 @@ impl<'a> WmState<'a> {
     }
 
     pub(crate) fn focus(&mut self, id: Window) -> Result<(), ReplyOrIdError> {
-        if let Some(old_focused) = self.windows.get_focused() {
+        if let Some(old_focused) = self.cur_monitor.windows.get_focused() {
             if old_focused.id == id {
                 return Ok(());
             }
-            utils::grab_buttons(&self.conn, old_focused.id, self.config.mod_key, false)?;
+            utils::grab_buttons(self.conn, old_focused.id, self.config.mod_key, false)?;
 
             let attrs =
                 ChangeWindowAttributesAux::default().border_pixel(self.config.normal_border_color);
             self.conn.change_window_attributes(old_focused.id, &attrs)?;
         }
 
-        utils::grab_buttons(&self.conn, id, self.config.mod_key, true)?;
-        self.windows.set_focused(id);
+        utils::grab_buttons(self.conn, id, self.config.mod_key, true)?;
+        if !self.cur_monitor.contains_window(id) {
+            let new_mon_idx = self
+                .monitors
+                .iter()
+                .enumerate()
+                .find(|(_i, m)| m.contains_window(id))
+                .map(|(i, _m)| i)
+                .expect("Window must be on a monitor");
+
+            mem::swap(&mut self.cur_monitor, &mut self.monitors[new_mon_idx]);
+        }
+
+        self.cur_monitor.windows.set_focused(id);
 
         // Give it the correct border color
         let attrs =

@@ -1,25 +1,24 @@
 use x11rb::{
-    connection::Connection,
     errors::ReplyOrIdError,
     protocol::xproto::{ConfigureWindowAux, ConnectionExt},
     rust_connection::RustConnection,
 };
 
-use crate::focus_history::FocusHist;
+use crate::{focus_history::FocusHist, rect::Rect};
 use common::TagId;
 
 pub(crate) fn update(
     conn: &RustConnection,
     focus: &mut FocusHist,
     tags: Vec<TagId>,
-    screen_num: usize,
+    rect: &Rect,
     border_width: u32,
     gap: u32,
 ) -> Result<(), ReplyOrIdError> {
     // First window gets 60% of the screen (the left side), the rest stack on the side
     // ToDo bar space.
-    let width = conn.setup().roots[screen_num].width_in_pixels as u32;
-    let height = conn.setup().roots[screen_num].height_in_pixels as u32;
+    let width = rect.width as u32;
+    let height = rect.height as u32;
 
     let master_width = width * 60 / 100;
     let slave_width = width - master_width;
@@ -52,25 +51,25 @@ pub(crate) fn update(
     let master_config = ConfigureWindowAux::new()
         .width(mw)
         .height(master_height)
-        .x(gap)
-        .y(gap)
+        .x(rect.x as i32 + gap)
+        .y(rect.y as i32 + gap)
         .border_width(bw);
     conn.configure_window(master_win.id, &master_config)?;
-    master_win.x = gap as i16;
-    master_win.y = gap as i16;
+    master_win.x = rect.x + gap as i16;
+    master_win.y = rect.y + gap as i16;
     master_win.width = mw as u16;
     master_win.height = master_height as u16;
 
     if let Some(slave_height) = height.checked_div(stack.len() as u32) {
         // If we get here it means there are slave windows
-        let x = master_width as i32 + gap * 2; // gap * 2 for both the slave window and the master window
+        let x = rect.x as i32 + master_width as i32 + gap * 2; // gap * 2 for both the slave window and the master window
 
         for (i, win) in stack.iter_mut().enumerate() {
             let y = if i == 0 {
                 gap
             } else {
                 slave_height as i32 * (i as i32) + gap
-            };
+            } + rect.y as i32;
             let width = slave_width - (border_width * 2) - (gap * 3) as u32;
             let height = slave_height - (border_width * 2) - (gap * 2) as u32;
 
