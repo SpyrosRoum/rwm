@@ -16,6 +16,10 @@ ron = "0.6"
 anyhow = "1"
 structopt = "0.3"
 oorandom = "11"
+dirs = "3"
+
+log = "0.4"
+flexi_logger = { version = "0.18", default_features = false, features = ["async", "colors"] }
 
 [features]
 # Creates two 960x1080 monitors. Used for testing with Xephyr

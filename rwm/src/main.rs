@@ -30,6 +30,9 @@ use {config::Config, states::WmState};
 struct Opt {
     /// Optional path to a config file
     config: Option<PathBuf>,
+    /// The directory to put logs in, defaults to $XDG_CONFIG_HOME/rwm/logs
+    #[structopt(long)]
+    logs_dir: Option<PathBuf>,
     /// Prints the default configuration in stdout and exits
     #[structopt(short, long)]
     print: bool,
@@ -55,6 +58,11 @@ fn main() -> anyhow::Result<()> {
             ron::ser::to_string_pretty(&config, ron::ser::PrettyConfig::default())?
         );
         return Ok(());
+    }
+
+    let logger = utils::init_logging(&options.logs_dir);
+    if logger.is_err() {
+        eprintln!("Failed to initialise logging. Ignoring..");
     }
 
     let (conn, screen_num) =

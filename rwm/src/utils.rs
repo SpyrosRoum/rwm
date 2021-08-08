@@ -1,5 +1,8 @@
+use std::path::PathBuf;
+
 use {
     anyhow::{anyhow, Context, Result},
+    flexi_logger::{FlexiLoggerError, LoggerHandle},
     oorandom::Rand32,
     x11rb::{
         connection::Connection as _,
@@ -139,4 +142,56 @@ pub(crate) fn get_monitors(
             )
         })
         .collect())
+}
+
+pub(crate) fn init_logging(log_dir: &Option<PathBuf>) -> Result<LoggerHandle, FlexiLoggerError> {
+    use flexi_logger::*;
+
+    /// Same as `flexi_logger::colored_opt_format` just with different timestamp format
+    fn custom_colored_opt_format(
+        w: &mut dyn std::io::Write,
+        now: &mut DeferredNow,
+        record: &Record,
+    ) -> Result<(), std::io::Error> {
+        let level = record.level();
+
+        write!(
+            w,
+            "[{}] {} [{}:{}]: {}",
+            style(level, now.now().format("%Y-%m-%d %H:%M:%S")),
+            style(level, level),
+            record.file().unwrap_or("<unnamed>"),
+            record.line().unwrap_or(0),
+            style(level, &record.args())
+        )
+    }
+
+    // If the user provided a path that contains `~` we need to expand it to the home dir
+    let log_dir = if let Some(dir) = log_dir {
+        if dir.starts_with("~") {
+            let mut log_dir = dirs::home_dir().unwrap();
+            let dir = dir.to_string_lossy();
+            log_dir.push(dir.strip_prefix('~').unwrap());
+            log_dir
+        } else {
+            dir.to_owned()
+        }
+    } else {
+        let mut dir = dirs::config_dir().unwrap();
+        dir.push("rwm/logs");
+        dir
+    };
+
+    Logger::try_with_str("info")?
+        .format(custom_colored_opt_format)
+        .log_to_file(FileSpec::default().directory(log_dir))
+        .write_mode(WriteMode::Async)
+        .print_message()
+        .rotate(
+            Criterion::AgeOrSize(Age::Day, 1000), // A day or 1000 bytes
+            Naming::Numbers,
+            Cleanup::KeepLogFiles(3),
+        )
+        .duplicate_to_stderr(Duplicate::All)
+        .start()
 }
