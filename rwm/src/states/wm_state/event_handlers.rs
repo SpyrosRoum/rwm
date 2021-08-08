@@ -1,6 +1,6 @@
 use std::mem;
 
-use x11rb::{errors::ReplyOrIdError, protocol::xproto::*, connection::Connection};
+use x11rb::{connection::Connection, errors::ReplyOrIdError, protocol::xproto::*};
 
 use crate::{utils::clean_mask, utils::get_transient_for, WmState};
 

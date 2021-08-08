@@ -55,13 +55,15 @@ impl<'a> WmState<'a> {
     ) -> anyhow::Result<Self> {
         // With seed = 42 at least the first million are unique so I think we should be good
         let mut rng = Rand32::new(42);
-        // let mut monitors = utils::get_monitors(conn, &config, screen_num, &mut rng)?;
-        let mut monitors = vec![
-            Monitor::new(&config, &mut rng, crate::rect::Rect::new(0, 0, 960, 1080)),
-            Monitor::new(&config, &mut rng, crate::rect::Rect::new(960, 0, 960, 1080)),
-        ];
 
-        std::fs::write("/home/spyros/rwm.log", format!("{:#?}", monitors)).ok();
+        let mut monitors = if cfg!(feature = "fake_monitors") {
+            vec![
+                Monitor::new(&config, &mut rng, crate::rect::Rect::new(0, 0, 960, 1080)),
+                Monitor::new(&config, &mut rng, crate::rect::Rect::new(960, 0, 960, 1080)),
+            ]
+        } else {
+            utils::get_monitors(conn, &config, screen_num, &mut rng)?
+        };
 
         // ToDo: Should it work with no monitors as well?
         let cur_monitor = monitors

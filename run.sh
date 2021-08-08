@@ -2,6 +2,7 @@
 
 set -euxo pipefail
 
+#cargo build --features fake_monitors
 cargo build
 
 # NOTE: Resizing doesn't work correctly in Xephyr,

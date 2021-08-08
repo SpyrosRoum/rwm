@@ -16,3 +16,7 @@ ron = "0.6"
 anyhow = "1"
 structopt = "0.3"
 oorandom = "11"
+
+[features]
+# Creates two 960x1080 monitors. Used for testing with Xephyr
+fake_monitors = []
