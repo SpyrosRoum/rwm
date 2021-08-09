@@ -70,6 +70,9 @@ impl<'a> WmState<'a> {
             .pop()
             .expect("There should be at least one monitor");
 
+        log::debug!("Initialising with monitors: {:#?}", monitors);
+        log::debug!("Initialising with current monitor: {:#?}", cur_monitor);
+
         Ok(Self {
             conn,
             config,
@@ -306,6 +309,7 @@ impl<'a> WmState<'a> {
     pub(crate) fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
         match event {
             Event::MapRequest(event) => {
+                log::info!("Handling {:?}", event);
                 self.manage_window(event.window)?;
                 self.focus(event.window)?;
                 self.update_windows()?;
@@ -324,6 +328,7 @@ impl<'a> WmState<'a> {
     /// Handle a client from the socket
     pub(crate) fn handle_client(&mut self, stream: &mut UnixStream) -> anyhow::Result<String> {
         let cmd = common::read_message(stream)?;
+        log::trace!("Got command from socket: {}", cmd);
         let cmd: Command = serde_json::from_str(&cmd).context("Invalid command")?;
 
         self.handle_command(cmd)
@@ -331,6 +336,7 @@ impl<'a> WmState<'a> {
 
     /// Handle the command from a client
     fn handle_command(&mut self, cmd: Command) -> anyhow::Result<String> {
+        log::info!("Handling command {:?}", cmd);
         match cmd {
             Command::Quit => {
                 self.running = false;
@@ -408,6 +414,7 @@ impl<'a> WmState<'a> {
     }
 
     pub(crate) fn focus(&mut self, id: Window) -> Result<(), ReplyOrIdError> {
+        log::info!("Giving focus to {}", id);
         if let Some(old_focused) = self.cur_monitor.windows.get_focused() {
             if old_focused.id == id {
                 return Ok(());

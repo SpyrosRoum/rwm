@@ -182,11 +182,10 @@ pub(crate) fn init_logging(log_dir: &Option<PathBuf>) -> Result<LoggerHandle, Fl
         dir
     };
 
-    Logger::try_with_str("info")?
+    Logger::try_with_env_or_str("info")?
         .format(custom_colored_opt_format)
         .log_to_file(FileSpec::default().directory(log_dir))
         .write_mode(WriteMode::Async)
-        .print_message()
         .rotate(
             Criterion::AgeOrSize(Age::Day, 1000), // A day or 1000 bytes
             Naming::Numbers,

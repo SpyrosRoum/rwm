@@ -86,6 +86,8 @@ impl Config {
             File::open(&path).context(format!("Failed to open `{}`", path.display()))?;
         let mut config: Self = ron::de::from_reader(conf_file)
             .context(format!("Failed to parse `{}`", path.display()))?;
+
+        log::info!("Loaded config from file {}", path.display());
         config.path = Some(path);
 
         let (class_rules, name_rules) = Self::extract_rules(&config.rules);
@@ -101,6 +103,8 @@ impl Config {
         }
         let path = path.unwrap_or_else(|| self.path.clone().unwrap());
 
+        log::trace!("Replacing config with {}", path.display());
+
         let conf_file =
             File::open(&path).context(format!("Failed to open `{}`", path.display()))?;
         let mut new_config: Self = ron::de::from_reader(conf_file)
@@ -113,6 +117,7 @@ impl Config {
         self.class_rules = class_rules;
         self.name_rules = name_rules;
 
+        log::info!("Loaded config from file");
         Ok(())
     }
 }

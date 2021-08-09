@@ -9,6 +9,7 @@ impl<'a> WmState<'a> {
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
+        log::info!("Handling {:?}", event);
         let screen = &self.conn.setup().roots[self.screen_num];
         if event.event == screen.root {
             return Ok(());
@@ -57,6 +58,7 @@ impl<'a> WmState<'a> {
         &mut self,
         event: MotionNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
+        log::info!("Handling {:?}", event);
         let mut should_update = false;
 
         if !self.cur_monitor.contains_point(event.root_x, event.root_y) {
@@ -137,6 +139,7 @@ impl<'a> WmState<'a> {
         &mut self,
         event: ButtonPressEvent,
     ) -> Result<(), ReplyOrIdError> {
+        log::info!("Handling {:?}", event);
         // Left or Right mouse click
         if ![1, 3].contains(&event.detail) {
             return Ok(());
@@ -159,6 +162,7 @@ impl<'a> WmState<'a> {
         &mut self,
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
+        log::info!("Handling {:?}", event);
         if self.config.follow_cursor {
             self.focus(event.event)?;
         }
@@ -166,6 +170,7 @@ impl<'a> WmState<'a> {
     }
 
     pub(crate) fn on_property_notify(&mut self, event: PropertyNotifyEvent) -> anyhow::Result<()> {
+        log::info!("Handling {:?}", event);
         if event.state == Property::DELETE {
             return Ok(());
         }

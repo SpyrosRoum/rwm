@@ -1,7 +1,7 @@
 This is a list of things that I want to do/fix/improve. There may be more things that I want to do and there probably are more bugs. 
 
 # To-do
-- [ ] Introduce logs
+- [X] Introduce logs
 - [ ] Add scratch pads
 - [ ] Add support for polybar
 - [X] Multi-monitor support (RandR)

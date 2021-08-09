@@ -29,6 +29,7 @@ use {config::Config, states::WmState};
 #[derive(StructOpt, Debug)]
 struct Opt {
     /// Optional path to a config file
+    #[structopt(short, long)]
     config: Option<PathBuf>,
     /// The directory to put logs in, defaults to $XDG_CONFIG_HOME/rwm/logs
     #[structopt(long)]
@@ -88,8 +89,12 @@ fn main() -> anyhow::Result<()> {
 
     let config = match options.config {
         Some(path) => Config::from_file(path)?,
-        None => Config::default(),
+        None => {
+            log::info!("Using default config");
+            Config::default()
+        },
     };
+    log::debug!("Using config {:#?}", config);
 
     if config.layouts.is_empty() {
         bail!("There needs to be at least one layout in the config");
@@ -111,7 +116,7 @@ fn main() -> anyhow::Result<()> {
         .context("Error while looking for pre-existing windows")?;
 
     let listener = UnixListener::bind("/tmp/rwm.sock").context("Failed to connect to socket")?;
-    listener.set_nonblocking(true).unwrap();
+    listener.set_nonblocking(true).context("Couldn't set socket to non blocking")?;
 
     let poller = polling::Poller::new().unwrap();
     poller
@@ -158,6 +163,7 @@ fn main() -> anyhow::Result<()> {
                 }
                 last_motion = ev.time;
             }
+            log::trace!("Got event from X: {:?}", event);
             // ToDo Error handling
             wm_state.handle_event(event)?;
         }
