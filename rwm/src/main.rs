@@ -6,9 +6,9 @@ mod mod_mask;
 mod rect;
 mod spawn_rule;
 mod states;
-mod utils;
 #[cfg(test)]
 mod tests;
+mod utils;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf};
 
@@ -94,7 +94,7 @@ fn main() -> anyhow::Result<()> {
         None => {
             log::info!("Using default config");
             Config::default()
-        },
+        }
     };
     log::debug!("Using config {:#?}", config);
 
@@ -118,7 +118,9 @@ fn main() -> anyhow::Result<()> {
         .context("Error while looking for pre-existing windows")?;
 
     let listener = UnixListener::bind("/tmp/rwm.sock").context("Failed to connect to socket")?;
-    listener.set_nonblocking(true).context("Couldn't set socket to non blocking")?;
+    listener
+        .set_nonblocking(true)
+        .context("Couldn't set socket to non blocking")?;
 
     let poller = polling::Poller::new().unwrap();
     poller

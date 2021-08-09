@@ -1,4 +1,4 @@
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use {
     anyhow::{anyhow, Context, Result},
@@ -148,7 +148,10 @@ pub(crate) fn expand_tilde(path: &Path) -> PathBuf {
     if path.starts_with("~") {
         let mut base = dirs::home_dir().expect("Failed to get home dir");
         let dir = path.to_string_lossy();
-        base.push(dir.strip_prefix("~/").unwrap_or_else(|| dir.strip_prefix('~').unwrap()));
+        base.push(
+            dir.strip_prefix("~/")
+                .unwrap_or_else(|| dir.strip_prefix('~').unwrap()),
+        );
         base
     } else {
         path.to_owned()
