@@ -7,6 +7,8 @@ mod rect;
 mod spawn_rule;
 mod states;
 mod utils;
+#[cfg(test)]
+mod tests;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf};
 

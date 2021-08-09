@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use {
     anyhow::{anyhow, Context, Result},
@@ -144,6 +144,17 @@ pub(crate) fn get_monitors(
         .collect())
 }
 
+pub(crate) fn expand_tilde(path: &Path) -> PathBuf {
+    if path.starts_with("~") {
+        let mut base = dirs::home_dir().expect("Failed to get home dir");
+        let dir = path.to_string_lossy();
+        base.push(dir.strip_prefix("~/").unwrap_or_else(|| dir.strip_prefix('~').unwrap()));
+        base
+    } else {
+        path.to_owned()
+    }
+}
+
 pub(crate) fn init_logging(log_dir: &Option<PathBuf>) -> Result<LoggerHandle, FlexiLoggerError> {
     use flexi_logger::*;
 
@@ -168,14 +179,7 @@ pub(crate) fn init_logging(log_dir: &Option<PathBuf>) -> Result<LoggerHandle, Fl
 
     // If the user provided a path that contains `~` we need to expand it to the home dir
     let log_dir = if let Some(dir) = log_dir {
-        if dir.starts_with("~") {
-            let mut log_dir = dirs::home_dir().unwrap();
-            let dir = dir.to_string_lossy();
-            log_dir.push(dir.strip_prefix('~').unwrap());
-            log_dir
-        } else {
-            dir.to_owned()
-        }
+        expand_tilde(dir)
     } else {
         let mut dir = dirs::config_dir().unwrap();
         dir.push("rwm/logs");
