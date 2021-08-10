@@ -17,6 +17,7 @@ use {
 
 use crate::{
     config::Config,
+    layouts::LayoutType,
     states::{Monitor, WinState},
     utils,
 };
@@ -222,10 +223,24 @@ impl<'a> WmState<'a> {
         // Get Button Press events
         utils::grab_buttons(self.conn, window, self.config.mod_key, false)?;
 
+        let mut geom = self.conn.get_geometry(window)?.reply()?;
+        if self.cur_monitor.layout == LayoutType::Floating {
+            // Since it won't be tilled into the correct monitor, we need to make sure it is where it should be
+            geom.x = self.cur_monitor.rect.x;
+            geom.y = self.cur_monitor.rect.y;
+
+            let config = ConfigureWindowAux::new()
+                .x(geom.x as i32)
+                .y(geom.y as i32)
+                .width(geom.width as u32)
+                .height(geom.height as u32)
+                .border_width(self.config.border_width);
+
+            self.conn.configure_window(window, &config)?;
+        }
+
         // Show the window
         self.conn.map_window(window)?;
-
-        let geom = self.conn.get_geometry(window)?.reply()?;
 
         // We give a reference to the tags so the window can deduce what tags are currently visible.
         // We also push at the front of the focus history because the window now has focus

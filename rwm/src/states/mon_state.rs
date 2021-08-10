@@ -22,9 +22,9 @@ pub(crate) struct Monitor {
     // But it might not be a problem because when I am going through this I do check if it's visible
     // see `reset_focus`
     pub(crate) tags: Vec<TagState>,
-    layout: LayoutType,
+    pub(crate) layout: LayoutType,
 
-    rect: Rect,
+    pub(crate) rect: Rect,
 }
 
 impl Monitor {
