@@ -47,7 +47,8 @@ fn try_become_wm(conn: &RustConnection, screen: &Screen) -> Result<(), ReplyErro
             | EventMask::SUBSTRUCTURE_NOTIFY
             | EventMask::BUTTON_PRESS
             | EventMask::STRUCTURE_NOTIFY
-            | EventMask::PROPERTY_CHANGE,
+            | EventMask::PROPERTY_CHANGE
+            | EventMask::POINTER_MOTION,
     );
     conn.change_window_attributes(screen.root, &change)?.check()
 }

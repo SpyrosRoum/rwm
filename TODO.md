@@ -18,7 +18,7 @@ This is a list of things that I want to do/fix/improve. There may be more things
     - [ ] Monocle (See dwm's default monocle layout)
 
 # Fixes
-- [ ] All windows spawn in the first monitor
+- [X] All windows spawn in the first monitor
 - [ ] When you press mod + right click to resize a window for some reason the window becomes a little bigger in width and height
 - [ ] In various places I need to know the mod mask for numlock and from what I understand this is not always Mod2,
 so find a way to get that

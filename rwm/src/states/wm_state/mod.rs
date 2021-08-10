@@ -65,10 +65,8 @@ impl<'a> WmState<'a> {
             utils::get_monitors(conn, &config, screen_num, &mut rng)?
         };
 
-        // ToDo: Should it work with no monitors as well?
-        let cur_monitor = monitors
-            .pop()
-            .expect("There should be at least one monitor");
+        // ToDo: Should it work with no monitors as well? Currently it panics
+        let cur_monitor = monitors.remove(0);
 
         log::debug!("Initialising with monitors: {:#?}", monitors);
         log::debug!("Initialising with current monitor: {:#?}", cur_monitor);
@@ -229,34 +227,12 @@ impl<'a> WmState<'a> {
 
         let geom = self.conn.get_geometry(window)?.reply()?;
 
-        // Chances are it is located in our current monitor so we check that first
-        let mon = if self.cur_monitor.contains_point(geom.x, geom.y) {
-            &self.cur_monitor
-        } else {
-            // I assume either the window will exist in a monitor or it will be drugged somewhere out of
-            // screen
-            // Note: We don't chain the current monitor because we already checked that
-
-            // ToDo: We can be a lot smarter about the second case (ie check if the x is in the second monitor but the y is above, etc)
-            // Though is this even necessary/possible? Maybe on first scan only?
-            if let Some(mon) = self
-                .monitors
-                .iter()
-                .find(|m| m.contains_point(geom.x, geom.y))
-            {
-                mon
-            } else {
-                self.iter_mons()
-                    .find(|m| m.contains_point(0, 0))
-                    .expect("Origin must exist in monitor")
-            }
-        };
-
         // We give a reference to the tags so the window can deduce what tags are currently visible.
         // We also push at the front of the focus history because the window now has focus
-        let mut window = WinState::new(window, &geom, mon.tags.as_slice());
+        let mut window = WinState::new(window, &geom, self.cur_monitor.tags.as_slice());
 
         // If it's a transient window then copy parent's tags and make it floating
+        // ToDo: Put it in the same monitor as parent as well
         if let Ok(Some(id)) = utils::get_transient_for(self.conn, window.id) {
             if let Some(parent_window) = self.iter_windows().find(|win| win.id == id) {
                 let _ = std::mem::replace(&mut window.tags, parent_window.tags.clone());
@@ -264,18 +240,9 @@ impl<'a> WmState<'a> {
             }
         }
 
-        // We cannot curry `mon` under `self.apply_rules` because we need to borrow `self` mutably
-        let mon_id = mon.id;
-
         // Apply the user defined rules about where the window should spawn
         self.apply_rules(&mut window)?;
-
-        // We need it mutable now
-        let mon = self
-            .iter_mons_mut()
-            .find(|m| *m == &mon_id)
-            .expect("It has to exist");
-        mon.windows.push_front(window);
+        self.cur_monitor.windows.push_front(window);
         Ok(())
     }
 
@@ -320,7 +287,9 @@ impl<'a> WmState<'a> {
             Event::DestroyNotify(event) => self.unmanage_window(event.window)?,
             Event::EnterNotify(event) => self.on_enter_notify(event)?,
             Event::PropertyNotify(event) => self.on_property_notify(event)?,
-            _ => {}
+            _ => {
+                log::trace!("Ignoring event {:?}", event)
+            }
         };
         Ok(())
     }
