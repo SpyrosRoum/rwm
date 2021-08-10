@@ -7,7 +7,7 @@ use crate::{
     config::Config,
     rect::Rect,
     states::WinState,
-    {windows_history::WindowsHistory, layouts::LayoutType, states::TagState},
+    {layouts::LayoutType, states::TagState, windows_history::WindowsHistory},
 };
 use common::{Direction, LayoutSubcommand, TagId};
 

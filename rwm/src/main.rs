@@ -1,14 +1,15 @@
 mod color;
 mod config;
-mod windows_history;
 mod layouts;
 mod mod_mask;
+mod monitors_history;
 mod rect;
 mod spawn_rule;
 mod states;
 #[cfg(test)]
 mod tests;
 mod utils;
+mod windows_history;
 
 use std::{io::Write, net::Shutdown, os::unix::net::UnixListener, path::PathBuf};
 
