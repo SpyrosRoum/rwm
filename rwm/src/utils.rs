@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::{env, path::{Path, PathBuf}};
 
 use {
     anyhow::{anyhow, Context, Result},
@@ -189,12 +189,12 @@ pub(crate) fn init_logging(log_dir: &Option<PathBuf>) -> Result<LoggerHandle, Fl
         dir
     };
 
-    Logger::try_with_env_or_str("info")?
+    Logger::try_with_str(env::var("RWM_LOG").as_deref().unwrap_or("info"))?
         .format(custom_colored_opt_format)
         .log_to_file(FileSpec::default().directory(log_dir))
         .write_mode(WriteMode::Async)
         .rotate(
-            Criterion::AgeOrSize(Age::Day, 1000), // A day or 1000 bytes
+            Criterion::AgeOrSize(Age::Day, 100_000_000), // A day or 100mb
             Naming::Numbers,
             Cleanup::KeepLogFiles(3),
         )
