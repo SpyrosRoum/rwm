@@ -6,7 +6,7 @@ use {
     x11rb::{connection::Connection, errors::ReplyOrIdError, rust_connection::RustConnection},
 };
 
-use crate::{focus_history::FocusHist, rect::Rect};
+use crate::{rect::Rect, windows_history::WindowsHistory};
 use common::TagId;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ impl LayoutType {
     pub(crate) fn update(
         &self,
         conn: &RustConnection,
-        focus: &mut FocusHist,
+        focus: &mut WindowsHistory,
         tags: Vec<TagId>,
         rect: &Rect,
         border_width: u32,

@@ -5,12 +5,12 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use crate::{focus_history::FocusHist, rect::Rect};
+use crate::{rect::Rect, windows_history::WindowsHistory};
 use common::TagId;
 
 pub(crate) fn update(
     conn: &RustConnection,
-    focus: &mut FocusHist,
+    focus: &mut WindowsHistory,
     tags: Vec<TagId>,
     rect: &Rect,
     border_width: u32,

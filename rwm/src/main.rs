@@ -1,6 +1,6 @@
 mod color;
 mod config;
-mod focus_history;
+mod windows_history;
 mod layouts;
 mod mod_mask;
 mod rect;

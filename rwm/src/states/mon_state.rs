@@ -7,7 +7,7 @@ use crate::{
     config::Config,
     rect::Rect,
     states::WinState,
-    {focus_history::FocusHist, layouts::LayoutType, states::TagState},
+    {windows_history::WindowsHistory, layouts::LayoutType, states::TagState},
 };
 use common::{Direction, LayoutSubcommand, TagId};
 
@@ -16,7 +16,7 @@ pub(crate) struct Monitor {
     /// A randomly generated number
     pub(crate) id: u32,
     /// The window ids of the windows currently in this monitor
-    pub(crate) windows: FocusHist,
+    pub(crate) windows: WindowsHistory,
     /// The tags that are currently visible
     // FixMe: I don't think the above comment is true, see `on_tag_cmd` for example
     // But it might not be a problem because when I am going through this I do check if it's visible
@@ -38,7 +38,7 @@ impl Monitor {
 
         Self {
             id: rng.rand_u32(),
-            windows: FocusHist::new(),
+            windows: WindowsHistory::new(),
             tags,
             layout: def_layout,
             rect,

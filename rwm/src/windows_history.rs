@@ -12,13 +12,13 @@ use common::{Direction, TagId};
 /// Currently there is no way to keep a history when switching tags so
 /// this might have to change in the future.
 #[derive(Debug)]
-pub(crate) struct FocusHist {
+pub(crate) struct WindowsHistory {
     windows: VecDeque<WinState>,
     /// The currently focused window in the list, if the list is empty, this is none
     cur: Option<usize>,
 }
 
-impl FocusHist {
+impl WindowsHistory {
     pub(crate) fn new() -> Self {
         Self {
             windows: VecDeque::new(),
