@@ -4,7 +4,10 @@ use {
 };
 
 use crate::{utils::visible, WmState};
-use common::{Direction, TagSubcommand, WindowSubcommand, WindowToggle};
+use common::{
+    Command, Destination, Direction, MonitorSubcommand, TagSubcommand, WindowSubcommand,
+    WindowToggle,
+};
 
 impl<'a> WmState<'a> {
     pub(crate) fn on_tag_cmd(&mut self, sub: TagSubcommand) -> Result<()> {
@@ -49,7 +52,7 @@ impl<'a> WmState<'a> {
                     .context("Failed to destroy the current window")?;
                 return self.on_window_cmd(WindowSubcommand::Focus(Direction::Down));
             }
-            WindowSubcommand::Send { tag_id } => {
+            WindowSubcommand::Send(Destination::Tag { tag_id }) => {
                 // We want a mutable window state so we get it again as mut and we know it exists
                 let tag_state = self
                     .monitors
@@ -67,6 +70,32 @@ impl<'a> WmState<'a> {
 
                 if let Some(new_focused) = self.monitors.cur().get_next_win() {
                     let id = new_focused.id;
+                    self.focus(id)?;
+                }
+            }
+            WindowSubcommand::Send(Destination::Monitor(dir)) => {
+                if self.monitors.len() > 1 {
+                    let cur = self.monitors.cur_mut();
+                    let focused_win = cur.windows.get_focused();
+                    if focused_win.is_none() {
+                        // We just need to shift focus
+                        self.handle_command(Command::Monitor(MonitorSubcommand::Focus(dir)))?;
+                        return Ok(());
+                    }
+                    let focused_win = focused_win.unwrap().id;
+
+                    let (win, new) = cur.forget(focused_win);
+                    if let Some(new) = new {
+                        let id = new.id;
+                        cur.windows.set_focused(id);
+                    }
+                    let win = win.expect("It certainly exists");
+                    let id = win.id;
+
+                    self.monitors.focus(dir);
+                    self.monitors.cur_mut().windows.push_front(win);
+                    self.monitors.cur_mut().windows.set_focused(id);
+
                     self.focus(id)?;
                 }
             }

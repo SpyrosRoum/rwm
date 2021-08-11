@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use x11rb::protocol::xproto::Window;
 
 use crate::states::mon_state::Monitor;
+use common::Direction;
 
 /// A data structure that holds the history of monitors
 #[derive(Debug)]
@@ -21,6 +22,10 @@ impl MonitorsHistory {
         let monitors = monitors.into();
         assert!(!monitors.is_empty());
         Self { monitors, cur: 0 }
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.monitors.len()
     }
 
     pub(crate) fn iter(&self) -> impl Iterator<Item = &Monitor> {
@@ -73,5 +78,25 @@ impl MonitorsHistory {
         self.cur = new_mon_idx;
 
         &mut self.monitors[old]
+    }
+
+    pub(crate) fn focus(&mut self, dir: Direction) {
+        self.cur = match dir {
+            Direction::Up => {
+                if self.cur == 0 {
+                    self.monitors.len() - 1
+                } else {
+                    self.cur - 1
+                }
+            }
+            Direction::Down => {
+                if self.cur == self.monitors.len() - 1 {
+                    0
+                } else {
+                    self.cur + 1
+                }
+            }
+        };
+        log::debug!("Focusing monitor #{}", self.cur);
     }
 }

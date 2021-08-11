@@ -40,6 +40,14 @@ pub fn read_message(stream: &mut UnixStream) -> Result<String> {
 
 #[derive(Deserialize, Serialize, StructOpt, Debug, Copy, Clone)]
 pub enum Direction {
+    #[structopt(aliases = &["prev", "previous"])]
     Up,
+    #[structopt(alias = "next")]
     Down,
+}
+
+#[derive(Deserialize, Serialize, StructOpt, Debug, Copy, Clone)]
+pub enum Destination {
+    Tag { tag_id: TagId },
+    Monitor(Direction),
 }

@@ -3,19 +3,19 @@ This is a list of things that I want to do/fix/improve. There may be more things
 # To-do
 - [X] Introduce logs
 - [ ] Add scratch pads
-- [ ] Add support for polybar
+- [ ] Add support for a bar
 - [X] Multi-monitor support (RandR)
-  - [ ] Add commands for moving windows to other monitors or giving focus to other monitors
+  - [X] Add commands for moving windows to other monitors and giving focus to other monitors
   - [ ] Detect when monitors get (un)plugged and handle it accordingly
 - [ ] Better ICCCM/EWMH coverage
 - [ ] Fake fullscreen (Allow windows to fullscreen into the space currently given to them)
 - [ ] Actual fullscreen (A command toggle to make a window fullscreen)
 - [ ] Probably more layouts, here are some ideas 
   (maybe not all of them will happen but layouts are easy to implement and PRs are welcome of course):
-    - [ ] [Deck](https://dwm.suckless.org/patches/deck)
-    - [ ] Monad Wide (Like monad tall but slaves go under main)
-    - [ ] Bsp (See bspwm)
-    - [ ] Monocle (See dwm's default monocle layout)
+  - [ ] [Deck](https://dwm.suckless.org/patches/deck)
+  - [ ] Monad Wide (Like monad tall but slaves go under main)
+  - [ ] Bsp (See bspwm)
+  - [ ] Monocle (See dwm's default monocle layout)
 
 # Fixes
 - [X] All windows spawn in the first monitor

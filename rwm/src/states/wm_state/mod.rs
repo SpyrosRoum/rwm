@@ -22,7 +22,7 @@ use crate::{
     states::{Monitor, WinState},
     utils,
 };
-use common::{Command, ConfigSubcommand};
+use common::{Command, ConfigSubcommand, MonitorSubcommand};
 
 #[derive(Debug)]
 pub(crate) struct WmState<'a> {
@@ -332,6 +332,23 @@ impl<'a> WmState<'a> {
                 self.update_windows()
                     .context("Failed to update windows after loading configuration")?;
             }
+            Command::Monitor(MonitorSubcommand::Focus(dir)) => {
+                if self.monitors.len() > 1 {
+                    if let Some(win) = self.monitors.cur().windows.get_focused() {
+                        let id = win.id;
+                        self.unfocus(id)?;
+                    }
+                    self.monitors.focus(dir);
+                    if let Some(win) = self.monitors.cur().windows.get_focused() {
+                        let id = win.id;
+                        self.focus(id)?;
+                    }
+                    self.update_windows().context(format!(
+                        "Failed to update windows after `Monitor(MonitorSubcommand::Focus({:?}))`",
+                        dir
+                    ))?;
+                }
+            }
         }
 
         Ok(String::from("0"))
@@ -352,7 +369,6 @@ impl<'a> WmState<'a> {
             }
         }
 
-        // Using `self.iter_mons_mut()` doesn't compile
         for mon in self.monitors.iter_mut() {
             mon.update_layout(self.conn, &self.config)?;
         }
@@ -382,17 +398,24 @@ impl<'a> WmState<'a> {
         Ok(())
     }
 
+    pub(crate) fn unfocus(&self, id: Window) -> Result<(), ReplyOrIdError> {
+        let attrs =
+            ChangeWindowAttributesAux::default().border_pixel(self.config.normal_border_color);
+        self.conn.change_window_attributes(id, &attrs)?;
+
+        Ok(())
+    }
+
     pub(crate) fn focus(&mut self, id: Window) -> Result<(), ReplyOrIdError> {
         log::info!("Giving focus to {}", id);
         if let Some(old_focused) = self.monitors.cur().windows.get_focused() {
-            if old_focused.id == id {
+            // We can only return early if old_focused == new_focused && there is one monitor because we may be coming from another monitor
+            if self.monitors.len() == 1 && old_focused.id == id {
                 return Ok(());
             }
             utils::grab_buttons(self.conn, old_focused.id, self.config.mod_key, false)?;
 
-            let attrs =
-                ChangeWindowAttributesAux::default().border_pixel(self.config.normal_border_color);
-            self.conn.change_window_attributes(old_focused.id, &attrs)?;
+            self.unfocus(old_focused.id)?;
         }
 
         utils::grab_buttons(self.conn, id, self.config.mod_key, true)?;
