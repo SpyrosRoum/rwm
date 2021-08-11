@@ -59,10 +59,18 @@ impl<'a> WmState<'a> {
         log::info!("Handling {:?}", event);
         let mut should_update = false;
 
+        // Changed focused monitor only if:
+        //   - The point is not in the current monitor
+        //   - AND we:
+        //       - Are dragging a window
+        //       - OR Resizing a window
+        //       - OR we have config.follow_cursor to true
         if !self
             .monitors
             .cur()
             .contains_point(event.root_x, event.root_y)
+            && ((self.dragging_window.is_some() || self.resizing_window.is_some())
+                || self.config.follow_cursor)
         {
             should_update = true;
             let old = self.monitors.focus_point(event.root_x, event.root_y);
