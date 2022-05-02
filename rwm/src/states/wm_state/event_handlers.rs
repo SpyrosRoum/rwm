@@ -170,6 +170,12 @@ impl<'a> WmState<'a> {
         event: EnterNotifyEvent,
     ) -> Result<(), ReplyOrIdError> {
         log::info!("Handling {:?}", event);
+        if event.mode != NotifyMode::NORMAL || event.detail != NotifyDetail::INFERIOR {
+            // If we use a command to shift the window and a new window comes under our cursor,
+            // we get NONLINEAR enter notify, so we ignore it
+            return Ok(());
+        }
+
         if self.config.follow_cursor {
             self.focus(event.event)?;
         }
