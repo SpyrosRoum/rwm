@@ -1,7 +1,6 @@
-use {
-    oorandom::Rand32,
-    x11rb::{errors::ReplyOrIdError, protocol::xproto::Window, rust_connection::RustConnection},
-};
+use std::sync::atomic::AtomicU32;
+
+use x11rb::{errors::ReplyOrIdError, protocol::xproto::Window, rust_connection::RustConnection};
 
 use crate::{
     config::Config,
@@ -10,6 +9,8 @@ use crate::{
     {layouts::LayoutType, states::TagState, windows_history::WindowsHistory},
 };
 use common::{Direction, LayoutSubcommand, TagId};
+
+static NEXT_ID: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Debug)]
 pub(crate) struct Monitor {
@@ -28,7 +29,7 @@ pub(crate) struct Monitor {
 }
 
 impl Monitor {
-    pub(crate) fn new(config: &Config, rng: &mut Rand32, rect: Rect) -> Self {
+    pub(crate) fn new(config: &Config, rect: Rect) -> Self {
         let def_layout = config.layouts[0];
         // tags are 1-9 and the default is 1
         let mut tags: Vec<TagState> = (1..=9)
@@ -37,7 +38,7 @@ impl Monitor {
         tags[0].visible = true;
 
         Self {
-            id: rng.rand_u32(),
+            id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             windows: WindowsHistory::new(),
             tags,
             layout: def_layout,

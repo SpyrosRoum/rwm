@@ -3,8 +3,8 @@ name = "rwm"
 version = "0.1.0"
 authors = ["Spyros Roum <spyrosr1@gmail.com>"]
 description = "The Rusty Window Manager"
-edition = "2018"
-license = "GPL-3.0-or-later"
+edition = "2021"
+license-file = "LICENSE"
 
 [dependencies]
 x11rb = { version = "0.8", features = ["cursor", "randr"] }
@@ -15,7 +15,6 @@ serde_json = "1"
 ron = "0.6"
 anyhow = "1"
 structopt = "0.3"
-oorandom = "11"
 dirs = "3"
 
 log = "0.4"

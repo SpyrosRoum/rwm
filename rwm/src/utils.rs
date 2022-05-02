@@ -6,7 +6,6 @@ use std::{
 use {
     anyhow::{anyhow, Context, Result},
     flexi_logger::{FlexiLoggerError, LoggerHandle},
-    oorandom::Rand32,
     x11rb::{
         connection::Connection as _,
         errors::ReplyOrIdError,
@@ -86,12 +85,12 @@ pub(crate) fn grab_buttons(
     let mod_key = u16::from(mod_key);
     if focus {
         // We need to grab for our modifier key, for our mod key + numlock, mod + lock, and mod + numlock + lock
-        for mask in std::array::IntoIter::new([
+        for mask in [
             0_u16,
             ModMask::LOCK.into(),
             ModMask::M2.into(), // ToDo `M2` might not always be numlock (see utils.rs as well)
             u16::from(ModMask::LOCK) | u16::from(ModMask::M2),
-        ]) {
+        ] {
             conn.grab_button(
                 false,
                 window,
@@ -126,7 +125,6 @@ pub(crate) fn get_monitors(
     conn: &RustConnection,
     config: &Config,
     screen_num: usize,
-    mut rng: &mut Rand32,
 ) -> Result<Vec<Monitor>> {
     let screen = &conn.setup().roots[screen_num];
     // Todo: Should check randr version? https://github.com/linebender/druid/pull/1804/files#diff-887fa9b9ca679a0017ce71c83d9be00af81b30d94c20f2430ffac6caa2fc3531R74
@@ -137,13 +135,7 @@ pub(crate) fn get_monitors(
         .context("Failed to get monitors from randr")?
         .monitors
         .iter()
-        .map(|info| {
-            Monitor::new(
-                config,
-                &mut rng,
-                Rect::new(info.x, info.y, info.width, info.height),
-            )
-        })
+        .map(|info| Monitor::new(config, Rect::new(info.x, info.y, info.width, info.height)))
         .collect())
 }
 

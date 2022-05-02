@@ -5,7 +5,6 @@ use std::{collections::HashSet, os::unix::net::UnixStream};
 
 use {
     anyhow::Context,
-    oorandom::Rand32,
     x11rb::{
         connection::Connection,
         cursor::Handle as CursorHandle,
@@ -40,9 +39,6 @@ pub(crate) struct WmState<'a> {
     pub(crate) resizing_window: Option<(Window, (i16, i16))>,
 
     pub(crate) cursor_handle: CursorHandle,
-
-    /// PRNG used for monitor ids
-    rng: Rand32,
 }
 
 impl<'a> WmState<'a> {
@@ -52,16 +48,13 @@ impl<'a> WmState<'a> {
         config: Config,
         cursor_handle: CursorHandle,
     ) -> anyhow::Result<Self> {
-        // With seed = 42 at least the first million are unique so I think we should be good
-        let mut rng = Rand32::new(42);
-
         let monitors = if cfg!(feature = "fake_monitors") {
             vec![
-                Monitor::new(&config, &mut rng, crate::rect::Rect::new(0, 0, 960, 1080)),
-                Monitor::new(&config, &mut rng, crate::rect::Rect::new(960, 0, 960, 1080)),
+                Monitor::new(&config, crate::rect::Rect::new(0, 0, 960, 1080)),
+                Monitor::new(&config, crate::rect::Rect::new(960, 0, 960, 1080)),
             ]
         } else {
-            utils::get_monitors(conn, &config, screen_num, &mut rng)?
+            utils::get_monitors(conn, &config, screen_num)?
         };
 
         log::debug!("Initialising with monitors: {:#?}", monitors);
@@ -76,19 +69,15 @@ impl<'a> WmState<'a> {
             dragging_window: None,
             resizing_window: None,
             cursor_handle,
-            rng,
         })
     }
 
     pub(crate) fn iter_windows(&self) -> impl Iterator<Item = &WinState> {
-        self.monitors.iter().map(|m| m.windows.iter()).flatten()
+        self.monitors.iter().flat_map(|m| m.windows.iter())
     }
 
     pub(crate) fn iter_windows_mut(&mut self) -> impl Iterator<Item = &mut WinState> {
-        self.monitors
-            .iter_mut()
-            .map(|m| m.windows.iter_mut())
-            .flatten()
+        self.monitors.iter_mut().flat_map(|m| m.windows.iter_mut())
     }
 
     /// Apply user defined rules on the given window (ex put it in tag 2 by default)
