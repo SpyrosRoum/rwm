@@ -6,6 +6,7 @@ use std::{
 use {
     anyhow::{anyhow, Context, Result},
     flexi_logger::{FlexiLoggerError, LoggerHandle},
+    time::{format_description::FormatItem, macros::format_description},
     x11rb::{
         connection::Connection as _,
         errors::ReplyOrIdError,
@@ -20,6 +21,10 @@ use crate::{
     rect::Rect,
     states::{Monitor, TagState, WinState},
 };
+
+/// Precompiled version of the time stamp format that is used by the provided format functions.
+const TS_FORMAT: &[FormatItem<'static>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
 
 pub(crate) fn clean_mask(mask: u16) -> u16 {
     // ToDo: I think num lock is not always Mod2, find a way to get that dynamically
@@ -167,11 +172,11 @@ pub(crate) fn init_logging(log_dir: &Option<PathBuf>) -> Result<LoggerHandle, Fl
         write!(
             w,
             "[{}] {} [{}:{}]: {}",
-            style(level, now.now().format("%Y-%m-%d %H:%M:%S")),
-            style(level, level),
+            style(level).paint(now.format(TS_FORMAT)),
+            style(level).paint(level.to_string()),
             record.file().unwrap_or("<unnamed>"),
             record.line().unwrap_or(0),
-            style(level, &record.args())
+            style(level).paint(&record.args().to_string())
         )
     }
 

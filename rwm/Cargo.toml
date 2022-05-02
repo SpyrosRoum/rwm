@@ -7,18 +7,19 @@ edition = "2021"
 license-file = "LICENSE"
 
 [dependencies]
-x11rb = { version = "0.8", features = ["cursor", "randr"] }
-polling = "2.0"
+x11rb = { version = "0.9", features = ["cursor", "randr"] }
+polling = "2"
 common = { path = "../common" }
 serde = "1"
 serde_json = "1"
-ron = "0.6"
+ron = "0.7"
 anyhow = "1"
 structopt = "0.3"
-dirs = "3"
+dirs = "4"
 
 log = "0.4"
-flexi_logger = { version = "0.18", default_features = false, features = ["async", "colors"] }
+flexi_logger = { version = "0.22", default_features = false, features = ["async", "colors"] }
+time = "0.3"
 
 [features]
 # Creates two 960x1080 monitors. Used for testing with Xephyr
